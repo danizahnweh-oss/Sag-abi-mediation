@@ -1,0 +1,305 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Abi Englisch – Mediation Trainer (BY)</title>
+  <style>
+    :root { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
+    body { margin: 0; background:#0b1020; color:#eaf0ff; }
+    header { padding: 20px; border-bottom: 1px solid rgba(255,255,255,.08); background: rgba(255,255,255,.02); }
+    main { max-width: 1100px; margin: 0 auto; padding: 20px; }
+    .grid { display:grid; gap: 16px; grid-template-columns: 1fr; }
+    @media (min-width: 980px){ .grid { grid-template-columns: 1.1fr .9fr; } }
+    .card { background: rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08); border-radius: 18px; padding: 16px; }
+    h1,h2,h3 { margin: 0 0 12px; }
+    label { display:block; margin: 10px 0 6px; color: rgba(234,240,255,.85); }
+    select,input[type="number"],input[type="text"],textarea {
+      width: 100%; box-sizing: border-box;
+      background: rgba(0,0,0,.25);
+      color:#eaf0ff; border:1px solid rgba(255,255,255,.14);
+      border-radius: 12px; padding: 10px 12px; outline:none;
+    }
+    textarea { min-height: 160px; resize: vertical; }
+    .row { display:flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    button {
+      background: #3b82f6; color: white; border: 0; border-radius: 12px;
+      padding: 10px 12px; cursor:pointer; font-weight: 650;
+    }
+    button.secondary { background: rgba(255,255,255,.10); }
+    button.danger { background:#ef4444; }
+    button:disabled { opacity:.6; cursor:not-allowed; }
+    .muted { color: rgba(234,240,255,.72); font-size: 14px; line-height: 1.35; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono"; }
+    .pill { display:inline-block; padding: 6px 10px; border-radius: 999px; background: rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.10); font-size: 12px; }
+    .kpi { display:flex; gap: 10px; flex-wrap: wrap; }
+    .kpi .box { padding: 10px 12px; border-radius: 14px; background: rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.10); }
+    .split { display:grid; gap: 10px; grid-template-columns: 1fr; }
+    @media (min-width: 700px){ .split { grid-template-columns: 1fr 1fr; } }
+    .hr { height: 1px; background: rgba(255,255,255,.10); margin: 14px 0; }
+    .small { font-size: 12px; color: rgba(234,240,255,.65); }
+    .warn { color: #ffd38a; }
+    .ok { color: #8ef0c3; }
+    .err { color: #ff9aa2; }
+    .badge { font-weight: 700; }
+  </style>
+  <!-- OCR (Client-side). Optional. -->
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+</head>
+<body>
+<header>
+  <div class="row" style="justify-content:space-between;">
+    <div>
+      <h1>Abi Englisch (BY) – Mediation Trainer</h1>
+      <div class="muted">Thema wählen → Ausgangstext + Task generieren → Lösung tippen oder Foto → Bewertung (B1+/B2 Raster)</div>
+    </div>
+    <span class="pill">MVP • self-host</span>
+  </div>
+</header>
+
+<main class="grid">
+  <section class="card">
+    <h2>1) Aufgabe generieren</h2>
+
+    <div class="split">
+      <div>
+        <label>Thema</label>
+        <select id="topic">
+          <option value="social media & mental health">Social media & mental health</option>
+          <option value="AI in everyday life (school/work)">AI in everyday life (school/work)</option>
+          <option value="climate policy & individual responsibility">Climate policy & individual responsibility</option>
+          <option value="migration & integration (local community)">Migration & integration (local community)</option>
+          <option value="consumerism & sustainability">Consumerism & sustainability</option>
+          <option value="youth participation & democracy">Youth participation & democracy</option>
+        </select>
+
+        <label>Gewünschte Länge des deutschen Originaltexts (Wörter)</label>
+        <input id="sourceLen" type="number" min="120" max="420" value="220" />
+        <div class="small">Tipp: 180–260 Wörter ist für Training oft ideal.</div>
+      </div>
+
+      <div>
+        <label>Textsorte / Situation (optional)</label>
+        <input id="genre" type="text" placeholder="z.B. E-Mail an Austauschpartner / Infotext für Eltern / Message an Schulleitung" />
+        <label>Adressat (optional)</label>
+        <input id="audience" type="text" placeholder="z.B. host family, school principal, local youth club..." />
+        <label>Aspekte (2–3) (optional)</label>
+        <input id="aspects" type="text" placeholder="z.B. benefits, risks, advice (comma-separated)" />
+      </div>
+    </div>
+
+    <div class="row" style="margin-top:12px;">
+      <button id="btnGenerate">Generate mediation task</button>
+      <button id="btnReset" class="secondary">Reset</button>
+      <span id="genStatus" class="muted"></span>
+    </div>
+
+    <div class="hr"></div>
+
+    <h3>Deutscher Originaltext</h3>
+    <textarea id="sourceText" class="mono" placeholder="Hier erscheint der deutsche Ausgangstext..." readonly></textarea>
+
+    <h3 style="margin-top:12px;">Task (English)</h3>
+    <textarea id="taskText" class="mono" placeholder="Here appears the English task..." readonly></textarea>
+  </section>
+
+  <section class="card">
+    <h2>2) Schülerlösung</h2>
+
+    <label>Text eingeben (oder per OCR befüllen)</label>
+    <textarea id="studentText" class="mono" placeholder="Write your mediation here..."></textarea>
+
+    <div class="row">
+      <div style="flex:1 1 260px;">
+        <label>Oder Foto hochladen (OCR)</label>
+        <input id="photo" type="file" accept="image/*" />
+        <div class="small warn">Tesseract ist stark bei Druckschrift, bei Handschrift variabel. Für echte Handschrift: Vision-OCR serverseitig (siehe Backend).</div>
+      </div>
+      <div style="flex: 0 0 auto; align-self:flex-end;">
+        <button id="btnOCR" class="secondary">Run OCR</button>
+      </div>
+    </div>
+
+    <div class="row" style="margin-top:10px;">
+      <label style="margin:0;">
+        <input id="useServerOcr" type="checkbox" />
+        OCR über Server/Vision nutzen (statt Tesseract im Browser)
+      </label>
+    </div>
+
+    <div class="hr"></div>
+
+    <h2>3) Korrektur & Bewertung</h2>
+
+    <div class="row">
+      <button id="btnGrade">Grade according to BY rubric (B1+/B2)</button>
+      <span id="gradeStatus" class="muted"></span>
+    </div>
+
+    <div class="hr"></div>
+
+    <div class="kpi" id="kpi" style="display:none;">
+      <div class="box"><div class="small">Inhalt & Textstruktur (0–4)</div><div class="badge" id="scoreContent">–</div></div>
+      <div class="box"><div class="small">Sprache (0–6)</div><div class="badge" id="scoreLang">–</div></div>
+      <div class="box"><div class="small">Gesamt (0–10)</div><div class="badge" id="scoreTotal">–</div></div>
+    </div>
+
+    <label>Feedback (rubric-referenced)</label>
+    <textarea id="feedback" class="mono" readonly placeholder="Feedback appears here..."></textarea>
+
+    <label>Marked-up suggestions (optional)</label>
+    <textarea id="corrections" class="mono" readonly placeholder="Optional: correction suggestions / improved version..."></textarea>
+
+    <div class="small">
+      Bewertungslogik basiert auf ISB-Raster „Sprachmittlung (B1+/B2 in Anteilen)“: Inhalt/Textstruktur 0–4, Sprache 0–6. (Quelle im Backend prompten)
+    </div>
+  </section>
+</main>
+
+<script>
+  const $ = (id) => document.getElementById(id);
+
+  const state = {
+    generated: null,
+    lastOCR: null,
+  };
+
+  function setStatus(el, msg, kind="") {
+    el.textContent = msg || "";
+    el.className = "muted " + (kind || "");
+  }
+
+  $("btnReset").addEventListener("click", () => {
+    $("sourceText").value = "";
+    $("taskText").value = "";
+    $("studentText").value = "";
+    $("feedback").value = "";
+    $("corrections").value = "";
+    $("kpi").style.display = "none";
+    setStatus($("genStatus"), "");
+    setStatus($("gradeStatus"), "");
+    state.generated = null;
+  });
+const API_BASE = "https://DEIN-WORKER-NAME.DEIN-ACCOUNT.workers.dev"; // kommt gleich
+
+async function postJSON(url, data) {
+  const res = await fetch(API_BASE + url, {
+    method: "POST",
+    headers: { "Content-Type":"application/json" },
+    body: JSON.stringify(data)
+  });
+  if (!res.ok) {
+    const text = await res.text().catch(()=> "");
+    throw new Error(`HTTP ${res.status}: ${text || res.statusText}`);
+  }
+  return res.json();
+}
+  
+      method: "POST",
+      headers: { "Content-Type":"application/json" },
+      body: JSON.stringify(data)
+    });
+    if (!res.ok) {
+      const text = await res.text().catch(()=> "");
+      throw new Error(`HTTP ${res.status}: ${text || res.statusText}`);
+    }
+    return res.json();
+  }
+
+  $("btnGenerate").addEventListener("click", async () => {
+    try {
+      setStatus($("genStatus"), "Generating…");
+      const payload = {
+        topic: $("topic").value,
+        source_len_words: Number($("sourceLen").value || 220),
+        genre_hint: $("genre").value || null,
+        audience_hint: $("audience").value || null,
+        aspects_hint: $("aspects").value || null
+      };
+      const data = await postJSON("/api/generate", payload);
+      state.generated = data;
+      $("sourceText").value = data.source_text_de || "";
+      $("taskText").value = data.task_en || "";
+      setStatus($("genStatus"), "Done.", "ok");
+    } catch (e) {
+      console.error(e);
+      setStatus($("genStatus"), e.message, "err");
+    }
+  });
+
+  $("btnOCR").addEventListener("click", async () => {
+    const file = $("photo").files?.[0];
+    if (!file) { alert("Bitte zuerst ein Bild auswählen."); return; }
+
+    try {
+      if ($("useServerOcr").checked) {
+        setStatus($("gradeStatus"), "Server OCR…");
+        // Send as base64 to backend (simple MVP).
+        const b64 = await new Promise((resolve, reject) => {
+          const r = new FileReader();
+          r.onload = () => resolve(r.result);
+          r.onerror = reject;
+          r.readAsDataURL(file);
+        });
+        const data = await postJSON("/api/ocr", { image_data_url: b64 });
+        $("studentText").value = (data.text || "").trim();
+        setStatus($("gradeStatus"), "OCR done.", "ok");
+        return;
+      }
+
+      setStatus($("gradeStatus"), "OCR (Tesseract) running…");
+      const { data: { text } } = await Tesseract.recognize(file, "eng+deu", {
+        logger: m => {
+          if (m.status && m.progress != null) {
+            setStatus($("gradeStatus"), `OCR: ${m.status} ${(m.progress*100).toFixed(0)}%`);
+          }
+        }
+      });
+      state.lastOCR = text;
+      $("studentText").value = (text || "").trim();
+      setStatus($("gradeStatus"), "OCR done.", "ok");
+    } catch (e) {
+      console.error(e);
+      setStatus($("gradeStatus"), e.message, "err");
+    }
+  });
+
+  $("btnGrade").addEventListener("click", async () => {
+    try {
+      if (!state.generated?.source_text_de || !state.generated?.task_en) {
+        alert("Bitte zuerst eine Aufgabe generieren.");
+        return;
+      }
+      const student = $("studentText").value.trim();
+      if (student.length < 40) {
+        alert("Bitte eine sinnvolle Lösung eintragen (mindestens ~40 Zeichen).");
+        return;
+      }
+
+      setStatus($("gradeStatus"), "Grading…");
+
+      const payload = {
+        source_text_de: state.generated.source_text_de,
+        task_en: state.generated.task_en,
+        student_text_en: student
+      };
+
+      const data = await postJSON("/api/grade", payload);
+
+      $("kpi").style.display = "flex";
+      $("scoreContent").textContent = `${data.scores?.content_textstructure ?? "–"}/4`;
+      $("scoreLang").textContent = `${data.scores?.language ?? "–"}/6`;
+      $("scoreTotal").textContent = `${data.scores?.total ?? "–"}/10`;
+
+      $("feedback").value = data.feedback || "";
+      $("corrections").value = data.corrections || "";
+
+      setStatus($("gradeStatus"), "Done.", "ok");
+    } catch (e) {
+      console.error(e);
+      setStatus($("gradeStatus"), e.message, "err");
+    }
+  });
+</script>
+</body>
+</html>
