@@ -929,47 +929,43 @@ const ACCESS_PASSWORD = "stanna2026";
 
 const GENERATION_PROMPT_TEMPLATE = `Du bist ein Experte für das bayerische Abitur im Fach Englisch. Erstelle eine Mediation-Prüfungsaufgabe.
 
-Deine Aufgabe:
-  Rolle: Du bist ein hochqualifizierter Redakteur für das Feuilleton einer großen deutschen Wochenzeitung (wie DIE ZEIT oder FAZ). Dein Schreibstil ist intellektuell anspruchsvoll, metaphorisch reich und nutzt komplexe Satzgefüge (Hypotaxen).
-
-1. Erstellung des deutschen Quelltextes (MINDESTENS {length} WÖRTER):
-
 THEMA: {topic}
+MINDESTLÄNGE QUELLTEXT: {length} Wörter
 
-Strikte Längenvorgabe: Der Text muss absolut mindestens {length} Wörter lang sein. Wenn er kürzer ist, ist die Aufgabe fehlgeschlagen.
+TEIL 1 – DEUTSCHER QUELLTEXT:
 
-Strukturzwang für die Länge: Um die Wortzahl zu erreichen, gliedere den Text zwingend in folgende 5 Abschnitte:
+Rolle: Du schreibst als Redakteur einer großen deutschen Wochenzeitung (DIE ZEIT, FAZ, Spiegel). 
 
-Ein aktuelles, lebendiges Szenario oder eine historische Analogie (ca. 100 Wörter).
-Detaillierte Analyse der gegenwärtigen Situation mit mindestens zwei fiktiven Expertenmeinungen (ca. 150-200 Wörter).
-Ein ausführlicher Exkurs über die Risiken oder moralischen Bedenken, unter Verwendung gehobener Vokabeln (ca. 150-200 Wörter).
-Eine tiefschürfende Reflexion über die langfristigen Folgen für die Gesellschaft (ca. 150 Wörter).
-Ein pointiertes, offenes Ende (ca. 100 Wörter).
+WICHTIGE STILREGELN:
+- Der Text muss wie ein echter, durchgehender Zeitungsartikel wirken – ein einziger Fließtext ohne Zwischenüberschriften, ohne Nummerierungen, ohne Aufzählungen.
+- Verwende Absätze (Leerzeilen zwischen Absätzen), aber KEINE Zwischenüberschriften oder Abschnittstitel.
+- Beginne mit einem konkreten, lebendigen Einstieg (Szene, Anekdote oder aktuelles Ereignis), der den Leser sofort ins Thema zieht.
+- Entwickle den Text organisch weiter: von der konkreten Beobachtung zur Analyse, von Expertenstimmen zu gesellschaftlichen Implikationen, und schließe mit einem offenen, nachdenklichen Ende.
+- Baue mindestens zwei fiktive Expertenzitate ein (z.B. "Wie die Soziologin Maria Berger betont: ...").
+- Schreibstil: intellektuell anspruchsvoll, metaphorisch, komplexe Satzgefüge (Hypotaxen), gehobenes Vokabular. Keine einfachen Hauptsätze aneinanderreihen.
+- Der Text muss MINDESTENS {length} Wörter lang sein.
 
-Stil: Vermeide einfache Aufzählungen. Nutze Einschübe, rhetorische Fragen und ein breites Vokabular (z.B. "Dichotomie", "Paradigma", "implizieren").
+TEIL 2 – ENGLISCHE AUFGABENSTELLUNG (Mediation Task):
 
-2. Erstellung der Englischen Mediation Task (Authentic Scenario):
+Schreibe eine KOMPAKTE Aufgabenstellung im authentischen Stil bayerischer Abiturprüfungen. Die gesamte Aufgabenstellung sollte nur 3-5 Sätze lang sein.
 
-Stil-Vorgabe: Schreibe die Aufgabenstellung exakt nach dem Vorbild bayerischer Abiturprüfungen (klarer Kontext, direkte Ansprache, keine ausschweifenden Erklärungen).
+WICHTIGE REGELN FÜR DIE AUFGABENSTELLUNG:
+- Erster Satz: Beschreibe kurz die Situation des Schülers (z.B. Ehrenamt, Austauschprogramm, Projekt).
+- Zweiter Satz: Erkläre den konkreten Anlass, warum ein Text verfasst werden muss.
+- Letzter Satz: Beginne mit "Write a/an [Textsorte] on..." und nenne die inhaltlichen Aspekte, die behandelt werden sollen. Diese Aspekte sollen als natürlicher Fließtext in einem einzigen Satz formuliert sein, NICHT als nummerierte Liste oder Bullet Points. Verbinde die Aspekte mit "and", Relativsätzen oder Partizipialkonstruktionen.
 
-Struktur der Task:
-Context: Beschreibe eine konkrete Situation, in der der Schüler ehrenamtlich tätig ist oder an einem Projekt teilnimmt.
-The Mission: Erkläre, warum der Text geschrieben werden muss.
-Specific Requirements: Nenne die Zielgruppe, die Textsorte und das Ziel des Textes.
-Content Points: Liste 3 bis 4 präzise Aspekte auf, die aus dem deutschen Text herausgearbeitet werden müssen.
+BEISPIEL für den richtigen Stil:
+"You are volunteering at Exmoor National Park, which was designated the first 'International Dark Sky Reserve' in Europe in 2011. All the international volunteers have been asked to present the role light at night plays in their home country on the park's website. Write an article on how light affects people and the natural world at night in Germany and what measures are being taken or considered to reduce light pollution."
 
-Beispiel-Niveau: Orientiere dich sprachlich an den Beispielen: "You have come across... You decide to write..." oder "All the international volunteers have been asked to present..."
-
-Hier ist eine Beispielaufgabe, orientiere dich vom Stil an dieser:
-You are volunteering at Exmoor National Park, which was designated the first "International Dark Sky Reserve" in Europe in 2011. All the international volunteers have been asked to present the role light at night plays in their home country on the park's website.
-Write an article on how light affects people and the natural world at night in Germany and what measures are being taken or considered to reduce light pollution.
+WEITERES BEISPIEL:
+"You are taking part in a youth exchange programme in Scotland focusing on environmental issues. The programme's blog features weekly contributions from participants about sustainability efforts in their home countries. Write a blog entry about how Germany is addressing the challenge of sustainable urban development and what role young people are playing in shaping greener cities."
 
 OUTPUT FORMAT:
 Antworte NUR mit reinem JSON in folgendem Format:
 {
   "headline": "Titel des Artikels",
-  "article_text": "Der komplette deutsche Text...",
-  "task_instruction": "Die komplette englische Aufgabenstellung..."
+  "article_text": "Der komplette deutsche Text als durchgehender Zeitungsartikel ohne Zwischenüberschriften...",
+  "task_instruction": "Die kompakte englische Aufgabenstellung in 3-5 Sätzen..."
 }`;
 
 const CORRECTION_RUBRIC_PROMPT = `Rolle: Du bist ein erfahrener und strenger Englischlehrer an einem bayerischen Gymnasium.
