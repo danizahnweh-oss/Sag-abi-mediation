@@ -160,7 +160,7 @@ async function handleOCR(request, env) {
           ]
         }
       ],
-      max_tokens: 2000
+      max_completion_tokens: 2000
     })
   });
 
@@ -221,7 +221,7 @@ Rules:
     body: JSON.stringify({
       model: "gpt-5.2",
       messages: [{ role: "user", content }],
-      max_tokens: 4000,
+      max_completion_tokens: 4000,
       temperature: 0.2
     })
   });
@@ -249,7 +249,7 @@ async function callOpenAI(env, messages) {
       model: "gpt-5.2",
       messages,
       temperature: 0.7,
-      max_tokens: 4000
+      max_completion_tokens: 4000
     })
   });
 
