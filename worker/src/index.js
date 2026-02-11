@@ -1,257 +1,297 @@
 export default {
   async fetch(request, env) {
+    const { pathname } = new URL(request.url);
+
+    // CORS Preflight
     if (request.method === "OPTIONS") {
       return new Response(null, { headers: corsHeaders() });
     }
 
-    const url = new URL(request.url);
-    const path = url.pathname;
-
     try {
-      if (request.method !== "POST") return json({ error: "Use POST" }, 405);
-
-      const body = await request.json();
-
-      if (path === "/api/generate") return handleGenerate(body, env);
-      if (path === "/api/grade") return handleGrade(body, env);
-      if (path === "/api/ocr") return handleOCR(body, env);
-
-      return json({ error: "Not found" }, 404);
-    } catch (e) {
-      return json({ error: String(e?.message || e) }, 500);
+      if (pathname === "/api/generate" && request.method === "POST") {
+        return await handleGenerate(request, env);
+      }
+      if (pathname === "/api/grade" && request.method === "POST") {
+        return await handleGrade(request, env);
+      }
+      if (pathname === "/api/ocr" && request.method === "POST") {
+        return await handleOCR(request, env);
+      }
+      if (pathname === "/api/parse-task" && request.method === "POST") {
+        return await handleParseTask(request, env);
+      }
+      return new Response("Not Found", { status: 404 });
+    } catch (err) {
+      return new Response(
+        JSON.stringify({ error: err.message }),
+        { status: 500, headers: corsHeaders() }
+      );
     }
   }
 };
 
-function corsHeaders() {
-  return {
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type"
-  };
-}
+/* ================= GENERATE ================= */
+async function handleGenerate(request, env) {
+  const body = await request.json();
+  const { topic, source_len_words, prompt_template } = body;
 
-function json(obj, status = 200) {
-  return new Response(JSON.stringify(obj), {
-    status,
-    headers: { "Content-Type": "application/json", ...corsHeaders() }
-  });
-}
+  // Replace placeholders that the frontend couldn't resolve
+  const prompt = prompt_template
+    .replace(/\{topic\}/g, topic || "")
+    .replace(/\$\{topic\}/g, topic || "")
+    .replace(/\{length\}/g, String(source_len_words || 600))
+    .replace(/\$\{length\}/g, String(source_len_words || 600));
 
-async function openaiResponses({ env, model, instructions, input, schema }) {
-  const resp = await fetch("https://api.openai.com/v1/responses", {
-    method: "POST",
-    headers: {
-      "Authorization": `Bearer ${env.OPENAI_API_KEY}`,
-      "Content-Type": "application/json"
+  const openaiRes = await callOpenAI(env, [
+    {
+      role: "system",
+      content: "You are an Abitur exam generator. Return valid JSON only. No markdown fences."
     },
-    body: JSON.stringify({
-      model,
-      store: false,
-      instructions,
-      input,
-      ...(schema
-        ? {
-            text: {
-              format: {
-                type: "json_schema",
-                name: schema.name,
-                strict: true,
-                schema: schema.schema
-              }
-            }
-          }
-        : {})
-    })
-  });
+    { role: "user", content: prompt }
+  ]);
 
-  const data = await resp.json();
-  if (!resp.ok) throw new Error(`OpenAI error: ${resp.status} ${JSON.stringify(data)}`);
-    // Robust extraction for Responses API: take the first text chunk if output_text is empty
-  let out = (data.output_text || "").trim();
-
-  if (!out && Array.isArray(data.output)) {
-    for (const item of data.output) {
-      if (item?.type === "message" && Array.isArray(item.content)) {
-        for (const c of item.content) {
-          if (c?.type === "output_text" && typeof c.text === "string") {
-            out = c.text.trim();
-            break;
-          }
-        }
-      }
-      if (out) break;
-    }
-  }
-
-  return { raw: out, data };
-
+  const content = extractJSON(openaiRes);
+  return jsonResponse(content);
 }
 
-const RUBRIC = {
-  content_textstructure: {
-    4: [
-      "operator fully met; complete, correct, redundancy-free",
-      "clear structure; all necessary info; relevant cultural explanations where needed",
-      "recipient/text type fully appropriate",
-      "effective paraphrasing/mediation strategies"
-    ],
-    3: [
-      "operator largely met",
-      "mostly structured; essential info included; mostly relevant cultural explanations",
-      "recipient/text type mostly appropriate",
-      "generally effective paraphrasing"
-    ],
-    2: [
-      "operator partly met; overall still met",
-      "only partly structured; some inaccuracies/omissions; cultural explanations only basic",
-      "recipient/text type partly appropriate",
-      "paraphrasing only sometimes"
-    ],
-    1: ["operator barely met; incomplete/unstructured; weak recipient focus"],
-    0: ["not met; off-topic / no task relevance"]
-  },
-  language: {
-    6: ["near error-free; wide repertoire; very appropriate/varied expression"],
-    5: ["mostly error-free; solid repertoire; mostly appropriate/varied"],
-    4: ["several mostly minor errors; meaning largely clear; adequate range"],
-    3: ["several errors incl. occasional serious ones; overall understandable; limited range"],
-    2: ["many serious errors; clarity often affected; clearly limited range"],
-    1: ["very many serious errors; overall clarity impaired; very limited range"],
-    0: ["not understandable"]
-  }
-};
+/* ================= GRADE ================= */
+async function handleGrade(request, env) {
+  const body = await request.json();
+  const { source_text_de, task_en, student_text_en, rubric_prompt } = body;
 
-async function handleGenerate(body, env) {
-  const { topic, source_len_words, genre_hint, audience_hint, aspects_hint } = body || {};
-  if (!topic) return json({ error: "Missing topic" }, 400);
-
-  const model = env.OPENAI_MODEL || "gpt-4o-mini";
-
-  const instructions =
-    "You are an English exam preparation assistant for Bavarian Gymnasium (upper secondary). " +
-    "Generate a German source text and an English mediation task. " +
-    "Keep it realistic and age-appropriate.";
-
-  const input = [
+  const messages = [
+    {
+      role: "system",
+      content: `You are a strict German Abitur English teacher. 
+You must grade the student's mediation and return your evaluation in the following JSON format ONLY (no markdown, no extra text):
+{
+  "content_textstructure": <number 0-4>,
+  "language": <number 0-6>,
+  "total": <number 0-10>,
+  "feedback": "<detailed feedback in German with Markdown formatting>",
+  "corrections": "<specific corrections and error list in German with Markdown formatting>"
+}
+IMPORTANT: Return ONLY valid JSON. No markdown fences. No preamble.`
+    },
     {
       role: "user",
       content:
-        `Topic: ${topic}\n` +
-        `German source length target: ~${Number(source_len_words || 220)} words\n` +
-        `Hints:\n- genre_hint: ${genre_hint || "none"}\n- audience_hint: ${audience_hint || "none"}\n- aspects_hint: ${aspects_hint || "none"}\n\n` +
-        "Return JSON with:\n" +
-        '{ "source_text_de": "...", "task_en": "..." }\n' +
-        "Task must include a clear situation (recipient + text type) and 2–3 explicit aspects."
+        `Deutscher Quelltext:\n${source_text_de}\n\n` +
+        `Englische Aufgabenstellung:\n${task_en}\n\n` +
+        `Schülertext (Englisch):\n${student_text_en}\n\n` +
+        `Bewertungsraster:\n${rubric_prompt}`
     }
   ];
 
-  const schema = {
-    name: "mediation_task",
-    schema: {
-      type: "object",
-      additionalProperties: false,
-      required: ["source_text_de", "task_en"],
-      properties: {
-        source_text_de: { type: "string", minLength: 150 },
-        task_en: { type: "string", minLength: 80 }
-      }
-    }
-  };
+  const openaiRes = await callOpenAI(env, messages);
 
-  const { raw } = await openaiResponses({ env, model, instructions, input, schema });
-  return json(JSON.parse(raw));
+  // Try to parse structured JSON from response
+  try {
+    const parsed = extractJSON(openaiRes);
+    return jsonResponse({
+      scores: {
+        content_textstructure: parsed.content_textstructure ?? null,
+        language: parsed.language ?? null,
+        total: parsed.total ?? (
+          (parsed.content_textstructure != null && parsed.language != null)
+            ? parsed.content_textstructure + parsed.language
+            : null
+        )
+      },
+      feedback: parsed.feedback || "",
+      corrections: parsed.corrections || ""
+    });
+  } catch {
+    // Fallback: try to extract scores with regex from unstructured text
+    const contentMatch = openaiRes.match(/Inhalt[^:]*:\s*(\d)\s*\/\s*4/i)
+      || openaiRes.match(/content[^:]*:\s*(\d)/i);
+    const langMatch = openaiRes.match(/Sprache[^:]*:\s*(\d)\s*\/\s*6/i)
+      || openaiRes.match(/language[^:]*:\s*(\d)/i);
+    const totalMatch = openaiRes.match(/Gesamt[^:]*:\s*(\d+)\s*\/\s*10/i)
+      || openaiRes.match(/total[^:]*:\s*(\d+)/i);
+
+    const contentScore = contentMatch ? parseInt(contentMatch[1]) : null;
+    const langScore = langMatch ? parseInt(langMatch[1]) : null;
+    const totalScore = totalMatch
+      ? parseInt(totalMatch[1])
+      : (contentScore != null && langScore != null ? contentScore + langScore : null);
+
+    return jsonResponse({
+      scores: {
+        content_textstructure: contentScore,
+        language: langScore,
+        total: totalScore
+      },
+      feedback: openaiRes,
+      corrections: ""
+    });
+  }
 }
 
-async function handleGrade(body, env) {
-  const { source_text_de, task_en, student_text_en } = body || {};
-  if (!source_text_de || !task_en || !student_text_en) {
-    return json({ error: "Missing fields" }, 400);
+/* ================= OCR ================= */
+async function handleOCR(request, env) {
+  const body = await request.json();
+  const { image_base64 } = body;
+
+  if (!image_base64) {
+    return jsonResponse({ error: "No image provided" }, 400);
   }
 
-  const model = env.OPENAI_MODEL || "gpt-4o-mini";
-
-  const instructions =
-    "You are a strict but helpful examiner for Bavarian Gymnasium English mediation (Sprachmittlung), level B1+/B2. " +
-    "Grade using the rubric descriptors provided. Do not invent information not in the source.";
-
-  const input = [
-    {
-      role: "user",
-      content:
-        `TASK (EN):\n${task_en}\n\n` +
-        `GERMAN SOURCE (DE):\n${source_text_de}\n\n` +
-        `STUDENT ANSWER (EN):\n${student_text_en}\n\n` +
-        `RUBRIC:\nContent/Text structure 0-4: ${JSON.stringify(RUBRIC.content_textstructure)}\n` +
-        `Language 0-6: ${JSON.stringify(RUBRIC.language)}\n\n` +
-        "Return ONLY JSON with:\n" +
-        '{ scores:{content_textstructure:0..4, language:0..6, total:0..10}, feedback:"...", corrections:"..." }'
-    }
-  ];
-
-  const schema = {
-    name: "mediation_grading",
-    schema: {
-      type: "object",
-      additionalProperties: false,
-      required: ["scores", "feedback", "corrections"],
-      properties: {
-        scores: {
-          type: "object",
-          additionalProperties: false,
-          required: ["content_textstructure", "language", "total"],
-          properties: {
-            content_textstructure: { type: "integer", minimum: 0, maximum: 4 },
-            language: { type: "integer", minimum: 0, maximum: 6 },
-            total: { type: "integer", minimum: 0, maximum: 10 }
-          }
-        },
-        feedback: { type: "string", minLength: 60 },
-        corrections: { type: "string" }
-      }
-    }
-  };
-
-  const { raw } = await openaiResponses({ env, model, instructions, input, schema });
-  const out = JSON.parse(raw);
-  out.scores.total = (out.scores.content_textstructure || 0) + (out.scores.language || 0);
-  return json(out);
-}
-
-async function handleOCR(body, env) {
-  const { image_data_url } = body || {};
-  if (!image_data_url) return json({ error: "Missing image_data_url" }, 400);
-
-  const model = env.OPENAI_MODEL || "gpt-4o-mini";
-
-  const instructions =
-    "You are an OCR system. Extract the handwritten or printed text from the image. " +
-    "Return plain text only. Preserve line breaks where helpful.";
-
-  const resp = await fetch("https://api.openai.com/v1/responses", {
+  const openaiRes = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
     headers: {
-      "Authorization": `Bearer ${env.OPENAI_API_KEY}`,
-      "Content-Type": "application/json"
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${env.OPENAI_API_KEY}`
     },
     body: JSON.stringify({
-      model,
-      store: false,
-      instructions,
-      input: [
+      model: "gpt-5.2",
+      messages: [
         {
           role: "user",
           content: [
-            { type: "input_text", text: "OCR this image into text." },
-            { type: "input_image", image_url: image_data_url, detail: "high" }
+            {
+              type: "text",
+              text: "Transcribe this handwritten text exactly as written. Preserve line breaks. Do not translate, do not correct errors. Output only the transcribed text."
+            },
+            {
+              type: "image_url",
+              image_url: { url: image_base64 }
+            }
           ]
         }
-      ]
+      ],
+      max_tokens: 2000
     })
   });
 
-  const data = await resp.json();
-  if (!resp.ok) return json({ error: `OpenAI error: ${resp.status}`, details: data }, 500);
+  const data = await openaiRes.json();
 
-  return json({ text: (data.output_text || "").trim() });
+  if (!openaiRes.ok) {
+    throw new Error(data?.error?.message || "OpenAI Vision error");
+  }
+
+  const text = data?.choices?.[0]?.message?.content || "";
+  return jsonResponse({ text });
+}
+
+/* ================= PARSE TASK (from uploaded images) ================= */
+async function handleParseTask(request, env) {
+  const body = await request.json();
+  const { images } = body; // array of base64 image strings
+
+  if (!images || !images.length) {
+    return jsonResponse({ error: "No images provided" }, 400);
+  }
+
+  // Build content array with all images
+  const content = [
+    {
+      type: "text",
+      text: `You are looking at scanned pages of a German Abitur English mediation exam task.
+Extract the following information and return it as JSON ONLY (no markdown fences, no extra text):
+
+{
+  "headline": "Title or topic of the German source text (if visible)",
+  "article_text": "The complete German source text, transcribed exactly as written. Preserve paragraphs.",
+  "task_instruction": "The complete English mediation task/instructions, transcribed exactly as written."
+}
+
+Rules:
+- Transcribe the German text and English task EXACTLY as they appear. Do not translate or modify.
+- If the text spans multiple pages/images, combine them in the correct order.
+- Preserve paragraph breaks.
+- If you cannot find a German source text or English task, set that field to an empty string.
+- Return ONLY valid JSON.`
+    }
+  ];
+
+  for (const img of images) {
+    content.push({
+      type: "image_url",
+      image_url: { url: img }
+    });
+  }
+
+  const openaiRes = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${env.OPENAI_API_KEY}`
+    },
+    body: JSON.stringify({
+      model: "gpt-5.2",
+      messages: [{ role: "user", content }],
+      max_tokens: 4000,
+      temperature: 0.2
+    })
+  });
+
+  const data = await openaiRes.json();
+
+  if (!openaiRes.ok) {
+    throw new Error(data?.error?.message || "OpenAI Vision error");
+  }
+
+  const text = data?.choices?.[0]?.message?.content || "";
+  const parsed = extractJSON(text);
+  return jsonResponse(parsed);
+}
+
+/* ================= OPENAI CALL ================= */
+async function callOpenAI(env, messages) {
+  const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${env.OPENAI_API_KEY}`
+    },
+    body: JSON.stringify({
+      model: "gpt-5.2",
+      messages,
+      temperature: 0.7,
+      max_tokens: 4000
+    })
+  });
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data?.error?.message || "OpenAI error");
+  }
+  return data.choices[0].message.content;
+}
+
+/* ================= HELPERS ================= */
+function extractJSON(text) {
+  try {
+    // Remove markdown code fences if present
+    const clean = text.replace(/```json\s*/g, "").replace(/```\s*/g, "").trim();
+    return JSON.parse(clean);
+  } catch {
+    // Try to find JSON object in the text
+    const match = text.match(/\{[\s\S]*\}/);
+    if (match) {
+      try {
+        return JSON.parse(match[0]);
+      } catch {
+        throw new Error("Model did not return valid JSON.");
+      }
+    }
+    throw new Error("Model did not return valid JSON.");
+  }
+}
+
+function jsonResponse(data, status = 200) {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: corsHeaders()
+  });
+}
+
+function corsHeaders() {
+  return {
+    "Content-Type": "application/json",
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Headers": "Content-Type",
+    "Access-Control-Allow-Methods": "POST, OPTIONS"
+  };
 }

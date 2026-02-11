@@ -7,485 +7,1497 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 
 <style>
-/* --- Original Design (kept) --- */
-
+/* ============================
+   DESIGN: Refined Editorial
+   ============================ */
 :root {
---primary:#2c3e50;
---secondary:#34495e;
---accent:#2980b9;
---bg:#f4f6f7;
---text:#2c3e50;
---paper:#ffffff;
---warning:#c0392b;
+  --ink: #1a1a2e;
+  --ink-light: #4a4a6a;
+  --ink-muted: #8888a4;
+  --accent: #2563eb;
+  --accent-hover: #1d4ed8;
+  --accent-soft: #dbeafe;
+  --accent-glow: rgba(37, 99, 235, 0.08);
+  --surface: #ffffff;
+  --bg: #f0f0f5;
+  --bg-warm: #fafafa;
+  --border: #e2e2ec;
+  --border-light: #f0f0f5;
+  --success: #059669;
+  --success-bg: #ecfdf5;
+  --warning: #dc2626;
+  --warning-bg: #fef2f2;
+  --radius: 12px;
+  --radius-sm: 8px;
+  --shadow-sm: 0 1px 3px rgba(26,26,46,0.06);
+  --shadow-md: 0 4px 16px rgba(26,26,46,0.08);
+  --shadow-lg: 0 8px 32px rgba(26,26,46,0.12);
+  --font-display: 'DM Serif Display', Georgia, serif;
+  --font-body: 'DM Sans', -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Courier New', monospace;
 }
 
-body{
-font-family:'Segoe UI','Roboto','Helvetica',sans-serif;
-background:var(--bg);
-margin:0;
-color:var(--text);
-min-height:100vh;
-display:flex;
-flex-direction:column;
+*,*::before,*::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--font-body);
+  background: var(--bg);
+  color: var(--ink);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
 }
 
-/* LOGIN */
-
-#login-screen{
-position:fixed;
-inset:0;
-background:var(--primary);
-display:flex;
-justify-content:center;
-align-items:center;
-z-index:9999;
+/* ====== LOGIN ====== */
+#login-screen {
+  position: fixed;
+  inset: 0;
+  background: var(--ink);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+#login-screen::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 20% 50%, rgba(37,99,235,0.15) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 20%, rgba(37,99,235,0.1) 0%, transparent 50%);
+}
+.login-box {
+  position: relative;
+  background: var(--surface);
+  padding: 3rem;
+  border-radius: 16px;
+  box-shadow: var(--shadow-lg);
+  text-align: center;
+  max-width: 400px;
+  width: 90%;
+  animation: fadeUp .5s ease-out;
+}
+.login-box h2 {
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  margin-bottom: .4rem;
+  color: var(--ink);
+}
+.login-box p {
+  color: var(--ink-muted);
+  margin-bottom: 1.5rem;
+  font-size: .95rem;
+}
+.login-box .school-badge {
+  display: inline-block;
+  background: var(--accent-soft);
+  color: var(--accent);
+  padding: .3rem .8rem;
+  border-radius: 20px;
+  font-size: .8rem;
+  font-weight: 600;
+  margin-bottom: 1.2rem;
+  letter-spacing: .03em;
+}
+.login-input {
+  width: 100%;
+  padding: .85rem 1rem;
+  border: 2px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-body);
+  font-size: 1rem;
+  transition: border-color .2s;
+  outline: none;
+}
+.login-input:focus {
+  border-color: var(--accent);
+}
+.login-error {
+  color: var(--warning);
+  display: none;
+  font-weight: 600;
+  font-size: .85rem;
+  margin-top: .8rem;
 }
 
-.login-box{
-background:white;
-padding:2.5rem;
-border-radius:8px;
-box-shadow:0 10px 25px rgba(0,0,0,.2);
-text-align:center;
-max-width:420px;
-width:90%;
+/* ====== BUTTONS ====== */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  background: var(--accent);
+  color: white;
+  border: none;
+  padding: .75rem 1.5rem;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: .95rem;
+  transition: all .2s;
+  letter-spacing: .01em;
+}
+.btn:hover { background: var(--accent-hover); transform: translateY(-1px); box-shadow: var(--shadow-md); }
+.btn:active { transform: translateY(0); }
+.btn:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+.btn-secondary {
+  background: transparent;
+  color: var(--accent);
+  border: 2px solid var(--accent);
+}
+.btn-secondary:hover { background: var(--accent-soft); }
+.btn-small { padding: .5rem 1rem; font-size: .85rem; }
+.btn-danger { background: var(--warning); }
+.btn-danger:hover { background: #b91c1c; }
+
+/* ====== APP WRAPPER ====== */
+#app-wrapper { display: none; flex-direction: column; min-height: 100vh; }
+
+/* ====== HEADER ====== */
+header {
+  background: var(--surface);
+  padding: 1rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  backdrop-filter: blur(12px);
+  background: rgba(255,255,255,0.92);
+}
+header h1 {
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  color: var(--ink);
+}
+header h1 span {
+  color: var(--accent);
+}
+.header-meta {
+  font-size: .8rem;
+  color: var(--ink-muted);
+  font-weight: 500;
 }
 
-.login-error{color:var(--warning);display:none;font-weight:bold;}
-
-/* HEADER */
-
-#app-wrapper{display:none;flex-direction:column;min-height:100vh;}
-
-header{
-background:var(--primary);
-color:white;
-padding:1rem 2rem;
-display:flex;
-justify-content:space-between;
-align-items:center;
+/* ====== NAV STEPS ====== */
+nav {
+  background: var(--surface);
+  padding: 0 2rem;
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--border);
+  overflow-x: auto;
+}
+nav button {
+  background: none;
+  border: none;
+  padding: 1rem 1.2rem;
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: .9rem;
+  color: var(--ink-muted);
+  border-bottom: 3px solid transparent;
+  transition: all .2s;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+}
+nav button:hover { color: var(--ink-light); }
+nav button.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+.step-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--border);
+  font-size: .75rem;
+  font-weight: 700;
+  color: var(--ink-muted);
+  transition: all .2s;
+}
+nav button.active .step-num {
+  background: var(--accent);
+  color: white;
 }
 
-nav{
-background:white;
-padding:0 2rem;
-display:flex;
-gap:1rem;
-box-shadow:0 2px 4px rgba(0,0,0,.05);
+/* ====== MAIN ====== */
+main {
+  flex: 1;
+  max-width: 860px;
+  margin: 2rem auto;
+  padding: 0 1.5rem;
+  width: 100%;
 }
 
-nav button{
-background:none;
-border:none;
-padding:1rem .5rem;
-cursor:pointer;
-font-weight:600;
-color:var(--secondary);
-border-bottom:3px solid transparent;
+section {
+  display: none;
+  animation: fadeUp .3s ease-out;
+}
+section.active { display: block; }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-nav button.active{
-color:var(--accent);
-border-bottom-color:var(--accent);
+/* ====== CARDS ====== */
+.card {
+  background: var(--surface);
+  padding: 2rem;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-light);
+  margin-bottom: 1.5rem;
+}
+.card-header {
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  margin-bottom: 1.2rem;
+  color: var(--ink);
 }
 
-main{
-flex:1;
-max-width:1000px;
-margin:2rem auto;
-padding:1rem;
-width:100%;
+/* ====== FORM ELEMENTS ====== */
+label {
+  display: block;
+  font-weight: 600;
+  font-size: .85rem;
+  color: var(--ink-light);
+  margin-bottom: .4rem;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+select, input[type="number"], input[type="password"] {
+  width: 100%;
+  padding: .75rem 1rem;
+  border: 2px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-body);
+  font-size: .95rem;
+  transition: border-color .2s;
+  outline: none;
+  background: var(--surface);
+  color: var(--ink);
+}
+select:focus, input:focus { border-color: var(--accent); }
+
+.form-group { margin-bottom: 1.2rem; }
+
+/* ====== TASK DISPLAY ====== */
+.task-box {
+  background: var(--accent-glow);
+  border-left: 4px solid var(--accent);
+  padding: 1.4rem 1.6rem;
+  margin: 1rem 0;
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  line-height: 1.7;
+  font-size: .95rem;
+  white-space: pre-wrap;
+}
+.source-text {
+  background: var(--bg-warm);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 1.6rem;
+  margin: 1rem 0;
+  line-height: 1.8;
+  font-size: .95rem;
+  max-height: 500px;
+  overflow-y: auto;
+}
+.source-text p { margin-bottom: .8rem; }
+.word-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: .3rem;
+  background: var(--border-light);
+  padding: .3rem .7rem;
+  border-radius: 20px;
+  font-size: .8rem;
+  font-weight: 600;
+  color: var(--ink-muted);
+  margin-top: .8rem;
 }
 
-section{
-display:none;
-background:var(--paper);
-padding:2rem;
-border-radius:8px;
-box-shadow:0 2px 6px rgba(0,0,0,.05);
-margin-bottom:2rem;
+/* ====== TEXTAREA ====== */
+textarea {
+  width: 100%;
+  min-height: 380px;
+  padding: 1.4rem;
+  font-family: var(--font-mono);
+  font-size: .92rem;
+  line-height: 1.7;
+  border: 2px solid var(--border);
+  border-radius: var(--radius-sm);
+  box-sizing: border-box;
+  outline: none;
+  transition: border-color .2s;
+  resize: vertical;
+  color: var(--ink);
+}
+textarea:focus { border-color: var(--accent); }
+
+.write-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: .8rem;
+  flex-wrap: wrap;
+  gap: .8rem;
+}
+.word-counter {
+  font-size: .85rem;
+  color: var(--ink-muted);
+  font-weight: 500;
+  font-family: var(--font-mono);
 }
 
-section.active{display:block;}
-
-.task-box{
-background:#eef2f5;
-border-left:5px solid var(--accent);
-padding:1.2rem;
-margin:1rem 0;
+/* ====== OCR UPLOAD ====== */
+.ocr-section {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border);
+}
+.upload-zone {
+  border: 2px dashed var(--border);
+  border-radius: var(--radius-sm);
+  padding: 2rem;
+  text-align: center;
+  cursor: pointer;
+  transition: all .2s;
+  background: var(--bg-warm);
+}
+.upload-zone:hover {
+  border-color: var(--accent);
+  background: var(--accent-glow);
+}
+.upload-zone.dragover {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.upload-icon {
+  font-size: 2rem;
+  margin-bottom: .5rem;
+}
+.upload-text {
+  font-size: .9rem;
+  color: var(--ink-muted);
+}
+.upload-text strong {
+  color: var(--accent);
+}
+#ocrPreview {
+  display: none;
+  margin-top: 1rem;
+  text-align: center;
+}
+#ocrPreview img {
+  max-width: 100%;
+  max-height: 200px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
 }
 
-textarea{
-width:100%;
-min-height:400px;
-padding:1.2rem;
-font-family:'Courier New',monospace;
-font-size:1rem;
-border:1px solid #ddd;
-border-radius:4px;
+/* ====== OCR MULTI-PAGE ====== */
+.ocr-pages {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .6rem;
+  margin-top: 1rem;
+}
+.ocr-page-thumb {
+  position: relative;
+  width: 90px;
+  height: 90px;
+  border-radius: var(--radius-sm);
+  border: 2px solid var(--border);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.ocr-page-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.ocr-page-thumb .page-num {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(0,0,0,.6);
+  color: white;
+  font-size: .7rem;
+  font-weight: 700;
+  text-align: center;
+  padding: .15rem;
+}
+.ocr-page-thumb .remove-page {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: rgba(220,38,38,.85);
+  color: white;
+  border: none;
+  font-size: .7rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity .15s;
+}
+.ocr-page-thumb:hover .remove-page { opacity: 1; }
+.ocr-page-thumb.processing {
+  border-color: var(--accent);
+  animation: pulse 1.5s infinite;
+}
+.ocr-page-thumb.done { border-color: var(--success); }
+.ocr-page-thumb.error { border-color: var(--warning); }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.6} }
+
+/* ====== FEEDBACK / SCORES ====== */
+.scores-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+.score-card {
+  background: var(--bg-warm);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 1.2rem;
+  text-align: center;
+}
+.score-card.total {
+  background: var(--accent-glow);
+  border-color: var(--accent);
+}
+.score-label {
+  font-size: .75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: var(--ink-muted);
+  margin-bottom: .3rem;
+}
+.score-value {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  color: var(--ink);
+  line-height: 1;
+}
+.score-card.total .score-value { color: var(--accent); }
+.score-max {
+  font-size: .8rem;
+  color: var(--ink-muted);
 }
 
-.btn{
-background:var(--accent);
-color:white;
-border:none;
-padding:.7rem 1.4rem;
-border-radius:4px;
-cursor:pointer;
-font-weight:600;
+.feedback-body {
+  line-height: 1.7;
+  font-size: .95rem;
+}
+.feedback-body h1 { font-family: var(--font-display); font-size: 1.4rem; margin: 1.5rem 0 .8rem; }
+.feedback-body h2 { font-family: var(--font-display); font-size: 1.15rem; margin: 1.3rem 0 .6rem; color: var(--ink); }
+.feedback-body h3 { font-size: 1rem; margin: 1rem 0 .5rem; }
+.feedback-body ul, .feedback-body ol { padding-left: 1.5rem; margin: .5rem 0; }
+.feedback-body li { margin-bottom: .3rem; }
+.feedback-body p { margin-bottom: .6rem; }
+.feedback-body strong { color: var(--ink); }
+.feedback-body code {
+  background: var(--border-light);
+  padding: .15rem .4rem;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: .85em;
 }
 
-.btn:hover{background:#1f6391;}
+/* ====== LOADER ====== */
+.loader {
+  display: none;
+  margin: 2rem auto;
+  text-align: center;
+}
+.loader-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin .8s linear infinite;
+  margin: 0 auto .8rem;
+}
+.loader-text {
+  font-size: .85rem;
+  color: var(--ink-muted);
+  font-weight: 500;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
 
-.loader{
-border:4px solid #eee;
-border-top:4px solid var(--accent);
-border-radius:50%;
-width:35px;
-height:35px;
-animation:spin 1s linear infinite;
-display:none;
-margin:20px auto;
+/* ====== FOOTER ====== */
+footer {
+  text-align: center;
+  padding: 2rem;
+  color: var(--ink-muted);
+  font-size: .8rem;
+  border-top: 1px solid var(--border);
+  margin-top: auto;
 }
 
-@keyframes spin{to{transform:rotate(360deg)}}
+/* ====== PDF EXPORT ====== */
+.pdf-actions {
+  display: flex;
+  gap: .6rem;
+  margin-top: 1.5rem;
+  flex-wrap: wrap;
+}
+
+/* ====== MODE TOGGLE ====== */
+.mode-toggle {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: .6rem;
+}
+.mode-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: .5rem;
+  padding: .9rem 1rem;
+  border: 2px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-warm);
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: .9rem;
+  color: var(--ink-muted);
+  transition: all .2s;
+}
+.mode-btn:hover {
+  border-color: var(--accent);
+  color: var(--ink);
+}
+.mode-btn.active {
+  border-color: var(--accent);
+  background: var(--accent-glow);
+  color: var(--accent);
+}
+
+/* ====== RESPONSIVE ====== */
+@media (max-width: 640px) {
+  header { padding: .8rem 1rem; }
+  header h1 { font-size: 1.1rem; }
+  nav { padding: 0 .5rem; }
+  nav button { padding: .8rem .7rem; font-size: .82rem; }
+  main { padding: 0 1rem; margin: 1rem auto; }
+  .card { padding: 1.4rem; }
+  .scores-grid { grid-template-columns: 1fr; }
+  textarea { min-height: 280px; }
+  .mode-toggle { grid-template-columns: 1fr; }
+}
 </style>
 </head>
 
 <body>
 
-<!-- LOGIN -->
-
+<!-- ====== LOGIN ====== -->
 <div id="login-screen">
-<div class="login-box">
-<h2>🔒 Zugriff geschützt</h2>
-<p>Bitte Passwort eingeben</p>
+  <div class="login-box">
+    <div class="school-badge">St. Anna Gymnasium</div>
+    <h2>Mediation Trainer</h2>
+    <p>Abitur Englisch – Niveau B2</p>
 
-<input type="password" id="accessPassword"
-placeholder="Passwort..."
-onkeyup="if(event.key==='Enter')checkPassword()">
+    <input type="password" id="accessPassword"
+           class="login-input"
+           placeholder="Passwort eingeben …"
+           autocomplete="off"
+           onkeyup="if(event.key==='Enter')checkPassword()">
 
-<br><br>
-
-<button class="btn" onclick="checkPassword()">Starten</button>
-
-<div id="loginError" class="login-error">Falsches Passwort</div>
+    <br><br>
+    <button class="btn" style="width:100%" onclick="checkPassword()">Zugang starten</button>
+    <div id="loginError" class="login-error">Falsches Passwort – bitte nochmal versuchen.</div>
+  </div>
 </div>
-</div>
 
-<!-- APP -->
-
+<!-- ====== APP ====== -->
 <div id="app-wrapper">
 
-<header>
-<h1>Abitur Mediation Trainer <span style="font-size:.8rem">St. Anna</span></h1>
-<div style="opacity:.8">2026</div>
-</header>
+  <header>
+    <h1>Mediation <span>Trainer</span></h1>
+    <div class="header-meta">Created by DZ · St. Anna</div>
+  </header>
 
-<nav>
-<button id="nav-setup" class="active" onclick="nav('setup')">1. Setup</button>
-<button id="nav-task" onclick="nav('task')">2. Task</button>
-<button id="nav-write" onclick="nav('write')">3. Writing</button>
-<button id="nav-feedback" onclick="nav('feedback')">4. Feedback</button>
-</nav>
+  <nav>
+    <button id="nav-setup" class="active" onclick="nav('setup')">
+      <span class="step-num">1</span> Setup
+    </button>
+    <button id="nav-task" onclick="nav('task')">
+      <span class="step-num">2</span> Aufgabe
+    </button>
+    <button id="nav-write" onclick="nav('write')">
+      <span class="step-num">3</span> Schreiben
+    </button>
+    <button id="nav-feedback" onclick="nav('feedback')">
+      <span class="step-num">4</span> Bewertung
+    </button>
+  </nav>
 
-<main>
+  <main>
 
-<!-- SETUP -->
+    <!-- ====== STEP 1: SETUP ====== -->
+    <section id="setup" class="active">
 
-<section id="setup" class="active">
+      <!-- Mode Toggle -->
+      <div class="card">
+        <h2 class="card-header">Aufgabe wählen</h2>
+        <div class="mode-toggle">
+          <button class="mode-btn active" id="modeGenerate" onclick="setSetupMode('generate')">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+            KI-Aufgabe generieren
+          </button>
+          <button class="mode-btn" id="modeUpload" onclick="setSetupMode('upload')">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            Eigene Aufgabe hochladen
+          </button>
+        </div>
+      </div>
 
-<h2>Prüfung erstellen</h2>
+      <!-- MODE A: Generate -->
+      <div class="card" id="setupGenerate">
+        <h2 class="card-header">Neue Aufgabe generieren</h2>
+        <p style="color:var(--ink-muted);font-size:.9rem;margin-bottom:1.2rem;">
+          Die KI erstellt einen deutschen Quelltext und eine passende englische Mediation Task.
+        </p>
 
-<label>Themenfeld</label><br>
+        <div class="form-group">
+          <label>Themenfeld</label>
+          <select id="topicSelect">
+            <option value="Science & Technology: Visions of the future, Utopia vs. Dystopia">Science & Technology: Visions of the Future</option>
+            <option value="Global Chances and Challenges: Sustainability">Global Chances & Challenges: Sustainability</option>
+            <option value="The Media: Impact on individual and society">The Media: Impact on Individual & Society</option>
+            <option value="Politics and Society: UK/USA tradition and change">Politics & Society: UK/USA Tradition & Change</option>
+            <option value="The World of Work: Automation and Digitalization">The World of Work: Automation & Digitalization</option>
+          </select>
+        </div>
 
-<select id="topicSelect">
-<option>Science & Technology</option>
-<option>Global Challenges</option>
-<option>Media & Society</option>
-<option>Politics & Change</option>
-<option>Future of Work</option>
-</select>
+        <div class="form-group">
+          <label>Länge Quelltext (Wörter)</label>
+          <input type="number" id="sourceLength" value="600" min="200" max="1500" step="50">
+        </div>
 
-<br><br>
+        <button class="btn" id="generateBtn" onclick="generateExam()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          Aufgabe generieren
+        </button>
 
-<label>Länge (Wörter)</label><br>
+        <div id="setupLoader" class="loader">
+          <div class="loader-spinner"></div>
+          <div class="loader-text">Aufgabe wird generiert – das kann bis zu 30 Sekunden dauern …</div>
+        </div>
+      </div>
 
-<input type="number" id="sourceLength" value="600">
+      <!-- MODE B: Upload own task -->
+      <div class="card" id="setupUpload" style="display:none;">
+        <h2 class="card-header">Eigene Aufgabe hochladen</h2>
+        <p style="color:var(--ink-muted);font-size:.9rem;margin-bottom:1.2rem;">
+          Lade Fotos einer Abituraufgabe hoch (z.B. alte Prüfung). Die KI erkennt automatisch
+          den deutschen Quelltext und die englische Aufgabenstellung.
+        </p>
 
-<br><br>
+        <div class="upload-zone" id="taskUploadZone" onclick="document.getElementById('taskFileInput').click()">
+          <div class="upload-icon">📄</div>
+          <div class="upload-text"><strong>Klicken</strong> oder Bilder hierher ziehen</div>
+          <div class="upload-text" style="font-size:.8rem;margin-top:.3rem">JPG, PNG – Mehrere Seiten möglich</div>
+        </div>
 
-<button class="btn" onclick="generateExam()">Generieren</button>
+        <input type="file" id="taskFileInput" accept="image/*" multiple style="display:none" onchange="handleTaskUpload(this.files)">
 
-<div id="setupLoader" class="loader"></div>
+        <div id="taskUploadPages" class="ocr-pages"></div>
 
-</section>
+        <div id="taskUploadLoader" class="loader">
+          <div class="loader-spinner"></div>
+          <div class="loader-text">Aufgabe wird erkannt …</div>
+        </div>
 
-<!-- TASK -->
+        <!-- Editable preview of parsed task -->
+        <div id="taskUploadResult" style="display:none;margin-top:1.2rem;">
+          <div class="form-group">
+            <label>Erkannte Aufgabenstellung (Englisch) – bearbeitbar</label>
+            <textarea id="parsedTaskInstruction" style="min-height:120px;" placeholder="Englische Aufgabenstellung …"></textarea>
+          </div>
+          <div class="form-group">
+            <label>Erkannter Quelltext (Deutsch) – bearbeitbar</label>
+            <textarea id="parsedArticleText" style="min-height:200px;" placeholder="Deutscher Quelltext …"></textarea>
+          </div>
+          <div class="form-group">
+            <label>Titel / Überschrift</label>
+            <input type="text" id="parsedHeadline" placeholder="Titel des Quelltextes …" style="width:100%;padding:.75rem 1rem;border:2px solid var(--border);border-radius:var(--radius-sm);font-family:var(--font-body);font-size:.95rem;outline:none;">
+          </div>
+          <div style="display:flex;gap:.5rem;flex-wrap:wrap;">
+            <button class="btn" onclick="useUploadedTask()">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              Aufgabe übernehmen
+            </button>
+            <button class="btn btn-secondary" onclick="clearTaskUpload()">Verwerfen</button>
+          </div>
+        </div>
 
-<section id="task">
+        <!-- OR: Manual text entry -->
+        <details style="margin-top:1.2rem;">
+          <summary style="cursor:pointer;color:var(--accent);font-weight:600;font-size:.9rem;">
+            Alternativ: Text manuell eingeben
+          </summary>
+          <div style="margin-top:1rem;">
+            <div class="form-group">
+              <label>Aufgabenstellung (Englisch)</label>
+              <textarea id="manualTaskInstruction" style="min-height:100px;" placeholder="Write an article on …"></textarea>
+            </div>
+            <div class="form-group">
+              <label>Quelltext (Deutsch)</label>
+              <textarea id="manualArticleText" style="min-height:180px;" placeholder="Deutscher Quelltext hier einfügen …"></textarea>
+            </div>
+            <div class="form-group">
+              <label>Titel / Überschrift</label>
+              <input type="text" id="manualHeadline" placeholder="Titel …" style="width:100%;padding:.75rem 1rem;border:2px solid var(--border);border-radius:var(--radius-sm);font-family:var(--font-body);font-size:.95rem;outline:none;">
+            </div>
+            <button class="btn" onclick="useManualTask()">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              Aufgabe übernehmen
+            </button>
+          </div>
+        </details>
+      </div>
 
-<h2>Mediation Task</h2>
+    </section>
 
-<div class="task-box" id="taskInstruction">
-Bitte zuerst generieren.
-</div>
+    <!-- ====== STEP 2: TASK ====== -->
+    <section id="task">
+      <div class="card">
+        <h2 class="card-header">Mediation Task</h2>
+        <div class="task-box" id="taskInstruction">Bitte zuerst eine Prüfung generieren.</div>
+      </div>
 
-<h3>Source Text</h3>
+      <div class="card">
+        <h2 class="card-header" id="articleTitle">Quelltext</h2>
+        <div class="source-text" id="articleBody"></div>
+        <div class="word-badge">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/></svg>
+          <span id="wordCountLabel">0</span> Wörter
+        </div>
+      </div>
 
-<h4 id="articleTitle"></h4>
+      <button class="btn" onclick="nav('write')">
+        Weiter zum Schreiben →
+      </button>
+    </section>
 
-<div id="articleBody"></div>
+    <!-- ====== STEP 3: WRITE ====== -->
+    <section id="write">
+      <div class="card">
+        <h2 class="card-header">Deine Mediation</h2>
+        <textarea id="studentText" placeholder="Write your mediation here …" oninput="updateWordCount()"></textarea>
 
-<p>Wörter: <span id="wordCountLabel">0</span></p>
+        <div class="write-toolbar">
+          <div class="word-counter">
+            <span id="currentWordCount">0</span> Wörter
+          </div>
+          <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+            <button class="btn" id="submitBtn" onclick="submitForCorrection()">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              Zur Bewertung abgeben
+            </button>
+          </div>
+        </div>
+      </div>
 
-</section>
+      <!-- OCR UPLOAD -->
+      <div class="card">
+        <h2 class="card-header">Handschrift hochladen (OCR)</h2>
+        <p style="color:var(--ink-muted);font-size:.9rem;margin-bottom:1rem;">
+          Fotos deiner handschriftlichen Mediation hochladen – der Text wird automatisch erkannt.
+          Du kannst mehrere Seiten nacheinander hinzufügen.
+        </p>
 
-<!-- WRITE -->
+        <div class="upload-zone" id="uploadZone" onclick="document.getElementById('ocrFileInput').click()">
+          <div class="upload-icon">📷</div>
+          <div class="upload-text"><strong>Klicken</strong> oder Bilder hierher ziehen</div>
+          <div class="upload-text" style="font-size:.8rem;margin-top:.3rem">JPG, PNG – max. 10 MB pro Bild · Mehrere Seiten möglich</div>
+        </div>
 
-<section id="write">
+        <input type="file" id="ocrFileInput" accept="image/*" multiple style="display:none" onchange="handleOCRFiles(this.files)">
 
-<h2>Student Response</h2>
+        <!-- Thumbnail gallery for uploaded pages -->
+        <div id="ocrPages" class="ocr-pages"></div>
 
-<textarea id="studentText" oninput="autoSave()"></textarea>
+        <div id="ocrLoader" class="loader">
+          <div class="loader-spinner"></div>
+          <div class="loader-text">Handschrift wird erkannt … <span id="ocrProgress"></span></div>
+        </div>
 
-<br>
+        <div id="ocrResult" style="display:none;margin-top:1rem;">
+          <label>Erkannter Text (bearbeitbar):</label>
+          <textarea id="ocrText" style="min-height:200px;" placeholder="Erkannter Text erscheint hier – du kannst ihn vor der Übernahme bearbeiten …"></textarea>
+          <div style="display:flex;gap:.5rem;margin-top:.8rem;flex-wrap:wrap;align-items:center;">
+            <button class="btn btn-small" onclick="useOCRText()">
+              ✓ Text übernehmen
+            </button>
+            <button class="btn btn-small btn-secondary" onclick="clearOCR()">
+              Verwerfen
+            </button>
+            <span style="font-size:.8rem;color:var(--ink-muted);margin-left:auto;" id="ocrWordCount"></span>
+          </div>
+        </div>
+      </div>
+    </section>
 
-Wörter: <b id="currentWordCount">0</b>
+    <!-- ====== STEP 4: FEEDBACK ====== -->
+    <section id="feedback">
+      <div id="feedbackLoader" class="loader">
+        <div class="loader-spinner"></div>
+        <div class="loader-text">Bewertung wird erstellt – bitte warten …</div>
+      </div>
 
-<br><br>
+      <div id="feedbackContent" style="display:none;">
+        <!-- Scores Grid -->
+        <div class="scores-grid" id="scoresGrid">
+          <div class="score-card">
+            <div class="score-label">Inhalt & Struktur</div>
+            <div class="score-value" id="scoreContent">–</div>
+            <div class="score-max">von 4 BE</div>
+          </div>
+          <div class="score-card">
+            <div class="score-label">Sprache</div>
+            <div class="score-value" id="scoreLang">–</div>
+            <div class="score-max">von 6 BE</div>
+          </div>
+          <div class="score-card total">
+            <div class="score-label">Gesamt</div>
+            <div class="score-value" id="scoreTotal">–</div>
+            <div class="score-max">von 10 BE</div>
+          </div>
+        </div>
 
-<button class="btn" onclick="submitForCorrection()">Abgeben</button>
+        <!-- Detailed Feedback -->
+        <div class="card">
+          <h2 class="card-header">Detailliertes Feedback</h2>
+          <div class="feedback-body" id="feedbackBody"></div>
+        </div>
 
-</section>
+        <!-- Actions -->
+        <div class="pdf-actions">
+          <button class="btn btn-secondary btn-small" onclick="exportPDF()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Als PDF exportieren
+          </button>
+          <button class="btn btn-secondary btn-small" onclick="resetAll()">
+            Neue Aufgabe starten
+          </button>
+        </div>
+      </div>
+    </section>
 
-<!-- FEEDBACK -->
+  </main>
 
-<section id="feedback">
-
-<h2>Bewertung</h2>
-
-<div id="feedbackLoader" class="loader"></div>
-
-<div id="feedbackContent"></div>
-
-</section>
-
-</main>
-
-<footer style="text-align:center;padding:2rem;color:#999">
-© 2026 St. Anna Gymnasium
-</footer>
+  <footer>
+    © 2026 St. Anna Gymnasium · Mediation Trainer · Created by DZ
+  </footer>
 
 </div>
 
 <script>
-
 /* ================= CONFIG ================= */
-
-const API_BASE =
-"https://sag-abi-mediation-api.sanktannagymnasium.workers.dev";
-
+const API_BASE = "https://sag-abi-mediation-api.sanktannagymnasium.workers.dev";
 const ACCESS_PASSWORD = "stanna2026";
 
-const CONFIG = {
-storedData:{}
-};
+const GENERATION_PROMPT_TEMPLATE = `Du bist ein Experte für das bayerische Abitur im Fach Englisch. Erstelle eine Mediation-Prüfungsaufgabe.
+
+Deine Aufgabe:
+  Rolle: Du bist ein hochqualifizierter Redakteur für das Feuilleton einer großen deutschen Wochenzeitung (wie DIE ZEIT oder FAZ). Dein Schreibstil ist intellektuell anspruchsvoll, metaphorisch reich und nutzt komplexe Satzgefüge (Hypotaxen).
+
+1. Erstellung des deutschen Quelltextes (MINDESTENS {length} WÖRTER):
+
+THEMA: {topic}
+
+Strikte Längenvorgabe: Der Text muss absolut mindestens {length} Wörter lang sein. Wenn er kürzer ist, ist die Aufgabe fehlgeschlagen.
+
+Strukturzwang für die Länge: Um die Wortzahl zu erreichen, gliedere den Text zwingend in folgende 5 Abschnitte:
+
+Ein aktuelles, lebendiges Szenario oder eine historische Analogie (ca. 100 Wörter).
+Detaillierte Analyse der gegenwärtigen Situation mit mindestens zwei fiktiven Expertenmeinungen (ca. 150-200 Wörter).
+Ein ausführlicher Exkurs über die Risiken oder moralischen Bedenken, unter Verwendung gehobener Vokabeln (ca. 150-200 Wörter).
+Eine tiefschürfende Reflexion über die langfristigen Folgen für die Gesellschaft (ca. 150 Wörter).
+Ein pointiertes, offenes Ende (ca. 100 Wörter).
+
+Stil: Vermeide einfache Aufzählungen. Nutze Einschübe, rhetorische Fragen und ein breites Vokabular (z.B. "Dichotomie", "Paradigma", "implizieren").
+
+2. Erstellung der Englischen Mediation Task (Authentic Scenario):
+
+Stil-Vorgabe: Schreibe die Aufgabenstellung exakt nach dem Vorbild bayerischer Abiturprüfungen (klarer Kontext, direkte Ansprache, keine ausschweifenden Erklärungen).
+
+Struktur der Task:
+Context: Beschreibe eine konkrete Situation, in der der Schüler ehrenamtlich tätig ist oder an einem Projekt teilnimmt.
+The Mission: Erkläre, warum der Text geschrieben werden muss.
+Specific Requirements: Nenne die Zielgruppe, die Textsorte und das Ziel des Textes.
+Content Points: Liste 3 bis 4 präzise Aspekte auf, die aus dem deutschen Text herausgearbeitet werden müssen.
+
+Beispiel-Niveau: Orientiere dich sprachlich an den Beispielen: "You have come across... You decide to write..." oder "All the international volunteers have been asked to present..."
+
+Hier ist eine Beispielaufgabe, orientiere dich vom Stil an dieser:
+You are volunteering at Exmoor National Park, which was designated the first "International Dark Sky Reserve" in Europe in 2011. All the international volunteers have been asked to present the role light at night plays in their home country on the park's website.
+Write an article on how light affects people and the natural world at night in Germany and what measures are being taken or considered to reduce light pollution.
+
+OUTPUT FORMAT:
+Antworte NUR mit reinem JSON in folgendem Format:
+{
+  "headline": "Titel des Artikels",
+  "article_text": "Der komplette deutsche Text...",
+  "task_instruction": "Die komplette englische Aufgabenstellung..."
+}`;
+
+const CORRECTION_RUBRIC_PROMPT = `Rolle: Du bist ein erfahrener und strenger Englischlehrer an einem bayerischen Gymnasium.
+
+Bewertungslogik:
+Inhalt und Textstruktur (max. 4 BE)
+Sprache (max. 6 BE)
+
+1. Inhalt und Textstruktur (0-4 BE)
+4 BE: Aufgabenstellung umfassend, vollständig und korrekt erfüllt. Klar strukturiert, redundanzfrei. Kommunikationssituation durchgehend überzeugend. Geschickte Umschreibungsstrategien.
+3 BE: Wesentliche Informationen meist strukturiert und korrekt. Kommunikationssituation meist überzeugend. In der Regel gelungene Umschreibungsstrategien.
+2 BE: Nur teilweise strukturiert, nicht immer vollständig/korrekt. Adressatenbezug nur zum Teil umgesetzt. Umschreibungsstrategien nur stellenweise gelungen.
+1 BE: Weitgehend unvollständig, wenig strukturiert oder fehlerhaft. Kommunikationssituation kaum beachtet.
+0 BE: Aufgabenstellung nicht erfüllt, gravierende Lücken, falsche Textsorte.
+
+2. Sprache (0-6 BE)
+6 BE: Nahezu fehlerfrei. Breites Repertoire an Grammatik, Wortschatz, Syntax und Idiomatik.
+5 BE: Meist fehlerfrei. Gefestigtes Repertoire, meist abwechslungsreich und treffend.
+4 BE: Mehrere, zumeist leichte Verstöße; Verständlichkeit kaum beeinträchtigt.
+3 BE: Mehrere, teils gravierende Verstöße; Verständlichkeit insgesamt noch gewährleistet.
+2 BE: Viele gravierende Verstöße; Verständlichkeit stellenweise deutlich beeinträchtigt.
+1 BE: Sehr viele gravierende Fehler; Verständlichkeit insgesamt beeinträchtigt.
+0 BE: Text unverständlich.`;
+
+const CONFIG = { storedData: {} };
 
 /* ================= LOGIN ================= */
-
-function checkPassword(){
-
-const input=document.getElementById("accessPassword").value.trim();
-const err=document.getElementById("loginError");
-
-if(input===ACCESS_PASSWORD){
-
-sessionStorage.setItem("access","1");
-
-document.getElementById("login-screen").style.display="none";
-document.getElementById("app-wrapper").style.display="flex";
-
-err.style.display="none";
-
-}else{
-err.style.display="block";
-}
+function checkPassword() {
+  const input = document.getElementById("accessPassword").value.trim();
+  const err = document.getElementById("loginError");
+  if (input === ACCESS_PASSWORD) {
+    sessionStorage.setItem("access", "1");
+    document.getElementById("login-screen").style.display = "none";
+    document.getElementById("app-wrapper").style.display = "flex";
+    err.style.display = "none";
+  } else {
+    err.style.display = "block";
+    document.getElementById("accessPassword").value = "";
+    document.getElementById("accessPassword").focus();
+  }
 }
 
 /* ================= INIT ================= */
-
-window.onload=function(){
-
-if(sessionStorage.getItem("access")==="1"){
-document.getElementById("login-screen").style.display="none";
-document.getElementById("app-wrapper").style.display="flex";
-}
-
-const saved=localStorage.getItem("exam_data");
-if(saved){
-CONFIG.storedData=JSON.parse(saved);
-renderExam(CONFIG.storedData);
-}
-
-const st=localStorage.getItem("student_text");
-if(st){
-document.getElementById("studentText").value=st;
-autoSave();
-}
-
+window.onload = function () {
+  if (sessionStorage.getItem("access") === "1") {
+    document.getElementById("login-screen").style.display = "none";
+    document.getElementById("app-wrapper").style.display = "flex";
+  }
+  const saved = localStorage.getItem("exam_data");
+  if (saved) {
+    try {
+      CONFIG.storedData = JSON.parse(saved);
+      renderExam(CONFIG.storedData);
+    } catch { /* ignore corrupt data */ }
+  }
+  const st = localStorage.getItem("student_text");
+  if (st) {
+    document.getElementById("studentText").value = st;
+    updateWordCount();
+  }
 };
 
 /* ================= GENERATE ================= */
+async function generateExam() {
+  const topic = document.getElementById("topicSelect").value;
+  const length = Number(document.getElementById("sourceLength").value || 600);
+  const btn = document.getElementById("generateBtn");
 
-async function generateExam(){
+  btn.disabled = true;
+  document.getElementById("setupLoader").style.display = "block";
 
-const topic=document.getElementById("topicSelect").value;
-const length=document.getElementById("sourceLength").value;
+  try {
+    const res = await fetch(API_BASE + "/api/generate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        topic,
+        source_len_words: length,
+        prompt_template: GENERATION_PROMPT_TEMPLATE
+      })
+    });
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.error || `Serverfehler (${res.status})`);
+    }
+    const data = await res.json();
 
-document.getElementById("setupLoader").style.display="block";
+    const content = data.article_text && data.task_instruction
+      ? data
+      : { headline: "Mediation Task", article_text: data.source_text_de, task_instruction: data.task_en };
 
-try{
+    CONFIG.storedData = content;
+    localStorage.setItem("exam_data", JSON.stringify(content));
+    renderExam(content);
+    nav("task");
+  } catch (e) {
+    alert("Fehler beim Generieren: " + e.message);
+  }
 
-const res=await fetch(API_BASE+"/api/generate",{
-method:"POST",
-headers:{"Content-Type":"application/json"},
-body:JSON.stringify({
-topic:topic,
-source_len_words:Number(length)
-})
+  btn.disabled = false;
+  document.getElementById("setupLoader").style.display = "none";
+}
+
+/* ================= SETUP MODE TOGGLE ================= */
+function setSetupMode(mode) {
+  document.getElementById("modeGenerate").classList.toggle("active", mode === "generate");
+  document.getElementById("modeUpload").classList.toggle("active", mode === "upload");
+  document.getElementById("setupGenerate").style.display = mode === "generate" ? "block" : "none";
+  document.getElementById("setupUpload").style.display = mode === "upload" ? "block" : "none";
+}
+
+/* ================= TASK UPLOAD (own exam) ================= */
+const taskUploadImages = []; // {file, url, base64}
+
+async function handleTaskUpload(fileList) {
+  const files = Array.from(fileList).filter(f => {
+    if (!f.type.startsWith("image/")) return false;
+    if (f.size > 10 * 1024 * 1024) { alert(`${f.name} zu groß (max. 10 MB).`); return false; }
+    return true;
+  });
+  if (!files.length) return;
+
+  for (const file of files) {
+    const url = URL.createObjectURL(file);
+    taskUploadImages.push({ file, url, base64: null, status: "pending" });
+  }
+  renderTaskUploadPages();
+
+  // Convert all to base64
+  const startIdx = taskUploadImages.length - files.length;
+  for (let i = startIdx; i < taskUploadImages.length; i++) {
+    taskUploadImages[i].base64 = await fileToBase64(taskUploadImages[i].file);
+    taskUploadImages[i].status = "done";
+    renderTaskUploadPages();
+  }
+
+  // Now parse all images via API
+  document.getElementById("taskUploadLoader").style.display = "block";
+  document.getElementById("taskUploadResult").style.display = "none";
+
+  try {
+    const base64List = taskUploadImages.map(p => p.base64).filter(Boolean);
+    const res = await fetch(API_BASE + "/api/parse-task", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ images: base64List })
+    });
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.error || "Erkennung fehlgeschlagen");
+    }
+    const data = await res.json();
+
+    document.getElementById("parsedTaskInstruction").value = data.task_instruction || "";
+    document.getElementById("parsedArticleText").value = data.article_text || "";
+    document.getElementById("parsedHeadline").value = data.headline || "";
+    document.getElementById("taskUploadResult").style.display = "block";
+  } catch (e) {
+    alert("Fehler bei der Erkennung: " + e.message);
+  }
+
+  document.getElementById("taskUploadLoader").style.display = "none";
+  document.getElementById("taskFileInput").value = "";
+}
+
+function renderTaskUploadPages() {
+  const container = document.getElementById("taskUploadPages");
+  if (!taskUploadImages.length) { container.innerHTML = ""; return; }
+  container.innerHTML = taskUploadImages.map((p, i) => `
+    <div class="ocr-page-thumb ${p.status}">
+      <img src="${p.url}" alt="Seite ${i + 1}">
+      <div class="page-num">Seite ${i + 1}</div>
+      <button class="remove-page" onclick="removeTaskPage(${i})" title="Entfernen">✕</button>
+    </div>
+  `).join("");
+}
+
+function removeTaskPage(index) {
+  URL.revokeObjectURL(taskUploadImages[index].url);
+  taskUploadImages.splice(index, 1);
+  renderTaskUploadPages();
+}
+
+function useUploadedTask() {
+  const task = document.getElementById("parsedTaskInstruction").value.trim();
+  const article = document.getElementById("parsedArticleText").value.trim();
+  const headline = document.getElementById("parsedHeadline").value.trim();
+
+  if (!task && !article) {
+    alert("Kein Text erkannt. Bitte prüfe die Bilder oder gib den Text manuell ein.");
+    return;
+  }
+
+  const content = {
+    headline: headline || "Eigene Aufgabe",
+    article_text: article,
+    task_instruction: task
+  };
+  CONFIG.storedData = content;
+  localStorage.setItem("exam_data", JSON.stringify(content));
+  renderExam(content);
+  nav("task");
+}
+
+function useManualTask() {
+  const task = document.getElementById("manualTaskInstruction").value.trim();
+  const article = document.getElementById("manualArticleText").value.trim();
+  const headline = document.getElementById("manualHeadline").value.trim();
+
+  if (!task && !article) {
+    alert("Bitte mindestens Aufgabenstellung oder Quelltext eingeben.");
+    return;
+  }
+
+  const content = {
+    headline: headline || "Eigene Aufgabe",
+    article_text: article,
+    task_instruction: task
+  };
+  CONFIG.storedData = content;
+  localStorage.setItem("exam_data", JSON.stringify(content));
+  renderExam(content);
+  nav("task");
+}
+
+function clearTaskUpload() {
+  taskUploadImages.forEach(p => URL.revokeObjectURL(p.url));
+  taskUploadImages.length = 0;
+  renderTaskUploadPages();
+  document.getElementById("parsedTaskInstruction").value = "";
+  document.getElementById("parsedArticleText").value = "";
+  document.getElementById("parsedHeadline").value = "";
+  document.getElementById("taskUploadResult").style.display = "none";
+  document.getElementById("taskFileInput").value = "";
+}
+
+// Drag & Drop for task upload zone
+document.addEventListener("DOMContentLoaded", () => {
+  const zone = document.getElementById("taskUploadZone");
+  if (!zone) return;
+  zone.addEventListener("dragover", e => { e.preventDefault(); zone.classList.add("dragover"); });
+  zone.addEventListener("dragleave", () => zone.classList.remove("dragover"));
+  zone.addEventListener("drop", e => {
+    e.preventDefault();
+    zone.classList.remove("dragover");
+    const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith("image/"));
+    if (files.length) handleTaskUpload(files);
+  });
 });
-
-if(!res.ok) throw new Error("Serverfehler");
-
-const data=await res.json();
-
-const content={
-headline:"Generated Task",
-article_text:data.source_text_de,
-task_instruction:data.task_en
-};
-
-CONFIG.storedData=content;
-localStorage.setItem("exam_data",JSON.stringify(content));
-
-renderExam(content);
-nav("task");
-
-}catch(e){
-alert("Fehler: "+e.message);
-}
-
-document.getElementById("setupLoader").style.display="none";
-}
 
 /* ================= RENDER ================= */
-
-function renderExam(d){
-
-document.getElementById("taskInstruction").innerText=d.task_instruction;
-document.getElementById("articleTitle").innerText=d.headline;
-
-document.getElementById("articleBody").innerHTML=
-d.article_text.split("\n")
-.map(p=>`<p>${p}</p>`).join("");
-
-document.getElementById("wordCountLabel").innerText=
-countWords(d.article_text);
-
+function renderExam(d) {
+  document.getElementById("taskInstruction").innerText = d.task_instruction || "—";
+  document.getElementById("articleTitle").innerText = d.headline || "Quelltext";
+  document.getElementById("articleBody").innerHTML =
+    (d.article_text || "").split("\n").filter(p => p.trim()).map(p => `<p>${escapeHtml(p)}</p>`).join("");
+  document.getElementById("wordCountLabel").innerText = countWords(d.article_text || "");
 }
 
-/* ================= SUBMIT ================= */
+/* ================= SUBMIT FOR GRADING ================= */
+async function submitForCorrection() {
+  const text = document.getElementById("studentText").value;
+  if (countWords(text) < 30) {
+    alert("Dein Text ist zu kurz (mindestens 30 Wörter).");
+    return;
+  }
+  if (!CONFIG.storedData?.article_text || !CONFIG.storedData?.task_instruction) {
+    alert("Bitte zuerst eine Prüfung generieren (Schritt 1).");
+    return;
+  }
 
-async function submitForCorrection(){
+  const btn = document.getElementById("submitBtn");
+  btn.disabled = true;
+  nav("feedback");
+  document.getElementById("feedbackLoader").style.display = "block";
+  document.getElementById("feedbackContent").style.display = "none";
 
-const text=document.getElementById("studentText").value;
+  try {
+    const res = await fetch(API_BASE + "/api/grade", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        source_text_de: CONFIG.storedData.article_text,
+        task_en: CONFIG.storedData.task_instruction,
+        student_text_en: text,
+        rubric_prompt: CORRECTION_RUBRIC_PROMPT
+      })
+    });
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.error || `Serverfehler (${res.status})`);
+    }
+    const data = await res.json();
 
-if(countWords(text)<50){
-alert("Text zu kurz");
-return;
+    // Display scores
+    const cs = data.scores?.content_textstructure;
+    const ls = data.scores?.language;
+    const ts = data.scores?.total;
+
+    document.getElementById("scoreContent").textContent = cs != null ? cs : "–";
+    document.getElementById("scoreLang").textContent = ls != null ? ls : "–";
+    document.getElementById("scoreTotal").textContent = ts != null ? ts : "–";
+
+    // Display feedback
+    const feedbackMd = (data.feedback || "") + (data.corrections ? "\n\n## Korrekturen\n" + data.corrections : "");
+    document.getElementById("feedbackBody").innerHTML = marked.parse(feedbackMd);
+
+    document.getElementById("feedbackContent").style.display = "block";
+  } catch (e) {
+    document.getElementById("feedbackContent").style.display = "block";
+    document.getElementById("feedbackBody").innerHTML =
+      `<p style="color:var(--warning);font-weight:600;">Fehler: ${escapeHtml(e.message)}</p>
+       <p style="color:var(--ink-muted);font-size:.9rem;">Bitte versuche es erneut oder kontaktiere deinen Lehrer.</p>`;
+  }
+
+  document.getElementById("feedbackLoader").style.display = "none";
+  btn.disabled = false;
 }
 
-nav("feedback");
+/* ================= OCR (Multi-Page) ================= */
+const ocrPages = []; // {file, base64, text, status}
 
-document.getElementById("feedbackLoader").style.display="block";
+async function handleOCRFiles(fileList) {
+  const files = Array.from(fileList);
+  const valid = files.filter(f => {
+    if (!f.type.startsWith("image/")) { alert(`${f.name} ist kein Bild.`); return false; }
+    if (f.size > 10 * 1024 * 1024) { alert(`${f.name} ist zu groß (max. 10 MB).`); return false; }
+    return true;
+  });
+  if (!valid.length) return;
 
-try{
+  // Add pages
+  for (const file of valid) {
+    const url = URL.createObjectURL(file);
+    ocrPages.push({ file, url, base64: null, text: "", status: "pending" });
+  }
+  renderOCRPages();
 
-const res=await fetch(API_BASE+"/api/grade",{
-method:"POST",
-headers:{"Content-Type":"application/json"},
-body:JSON.stringify({
-source_text_de:CONFIG.storedData.article_text,
-task_en:CONFIG.storedData.task_instruction,
-student_text_en:text
-})
+  // Process each new page
+  const startIdx = ocrPages.length - valid.length;
+  document.getElementById("ocrLoader").style.display = "block";
+
+  for (let i = startIdx; i < ocrPages.length; i++) {
+    const page = ocrPages[i];
+    page.status = "processing";
+    renderOCRPages();
+    document.getElementById("ocrProgress").textContent = `Seite ${i + 1} von ${ocrPages.length}`;
+
+    try {
+      const base64 = await fileToBase64(page.file);
+      page.base64 = base64;
+
+      const res = await fetch(API_BASE + "/api/ocr", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ image_base64: base64 })
+      });
+      if (!res.ok) throw new Error("OCR fehlgeschlagen");
+      const data = await res.json();
+
+      page.text = data.text || "";
+      page.status = "done";
+    } catch (e) {
+      page.text = `[Fehler bei Seite ${i + 1}: ${e.message}]`;
+      page.status = "error";
+    }
+    renderOCRPages();
+  }
+
+  document.getElementById("ocrLoader").style.display = "none";
+  document.getElementById("ocrProgress").textContent = "";
+
+  // Combine all texts and show result
+  combineOCRTexts();
+  document.getElementById("ocrResult").style.display = "block";
+
+  // Reset file input so same files can be re-selected
+  document.getElementById("ocrFileInput").value = "";
+}
+
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(new Error("Datei konnte nicht gelesen werden"));
+    reader.readAsDataURL(file);
+  });
+}
+
+function renderOCRPages() {
+  const container = document.getElementById("ocrPages");
+  if (!ocrPages.length) { container.innerHTML = ""; return; }
+
+  container.innerHTML = ocrPages.map((p, i) => `
+    <div class="ocr-page-thumb ${p.status}">
+      <img src="${p.url}" alt="Seite ${i + 1}">
+      <div class="page-num">Seite ${i + 1}</div>
+      <button class="remove-page" onclick="removeOCRPage(${i})" title="Entfernen">✕</button>
+    </div>
+  `).join("");
+}
+
+function removeOCRPage(index) {
+  URL.revokeObjectURL(ocrPages[index].url);
+  ocrPages.splice(index, 1);
+  renderOCRPages();
+  if (ocrPages.length) {
+    combineOCRTexts();
+  } else {
+    document.getElementById("ocrResult").style.display = "none";
+  }
+}
+
+function combineOCRTexts() {
+  const combined = ocrPages
+    .map((p, i) => ocrPages.length > 1 ? `--- Seite ${i + 1} ---\n${p.text}` : p.text)
+    .join("\n\n");
+  document.getElementById("ocrText").value = combined;
+  updateOCRWordCount();
+}
+
+function updateOCRWordCount() {
+  const text = document.getElementById("ocrText").value;
+  const count = countWords(text);
+  document.getElementById("ocrWordCount").textContent = `${count} Wörter erkannt`;
+}
+
+// Make OCR textarea editable – update word count on input
+document.addEventListener("DOMContentLoaded", () => {
+  const ocrTextarea = document.getElementById("ocrText");
+  if (ocrTextarea) {
+    ocrTextarea.addEventListener("input", updateOCRWordCount);
+  }
 });
 
-if(!res.ok) throw new Error("Serverfehler");
+function useOCRText() {
+  const text = document.getElementById("ocrText").value;
+  if (!text.trim()) { alert("Kein Text vorhanden."); return; }
 
-const data=await res.json();
-
-const out=`
-# Bewertung
-
-**Gesamt: ${data.scores.total}/10**
-
-## Inhalt ${data.scores.content_textstructure}/4
-
-## Sprache ${data.scores.language}/6
-
-## Feedback
-
-${data.feedback}
-
-## Korrekturen
-
-${data.corrections}
-`;
-
-document.getElementById("feedbackContent").innerHTML=
-marked.parse(out);
-
-}catch(e){
-alert("Fehler: "+e.message);
+  // Clean up page separators if present
+  const cleaned = text.replace(/---\s*Seite\s*\d+\s*---\n?/g, "").trim();
+  document.getElementById("studentText").value = cleaned;
+  updateWordCount();
+  document.getElementById("studentText").scrollIntoView({ behavior: "smooth" });
 }
 
-document.getElementById("feedbackLoader").style.display="none";
+function clearOCR() {
+  ocrPages.forEach(p => URL.revokeObjectURL(p.url));
+  ocrPages.length = 0;
+  renderOCRPages();
+  document.getElementById("ocrText").value = "";
+  document.getElementById("ocrResult").style.display = "none";
+  document.getElementById("ocrFileInput").value = "";
+}
+
+// Drag & Drop (multi-file)
+document.addEventListener("DOMContentLoaded", () => {
+  const zone = document.getElementById("uploadZone");
+  if (!zone) return;
+  zone.addEventListener("dragover", e => { e.preventDefault(); zone.classList.add("dragover"); });
+  zone.addEventListener("dragleave", () => zone.classList.remove("dragover"));
+  zone.addEventListener("drop", e => {
+    e.preventDefault();
+    zone.classList.remove("dragover");
+    const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith("image/"));
+    if (files.length) handleOCRFiles(files);
+  });
+});
+
+/* ================= PDF EXPORT ================= */
+function exportPDF() {
+  const content = document.getElementById("feedbackContent");
+  if (!content) return;
+
+  const opt = {
+    margin: [10, 10, 10, 10],
+    filename: "Mediation_Bewertung.pdf",
+    image: { type: "jpeg", quality: 0.98 },
+    html2pdf: { breakBefore: ".card" },
+    jsPDF: { unit: "mm", format: "a4", orientation: "portrait" }
+  };
+
+  html2pdf().set(opt).from(content).save();
+}
+
+/* ================= RESET ================= */
+function resetAll() {
+  if (!confirm("Neue Aufgabe starten? Alle aktuellen Daten werden gelöscht.")) return;
+  localStorage.removeItem("exam_data");
+  localStorage.removeItem("student_text");
+  CONFIG.storedData = {};
+  document.getElementById("studentText").value = "";
+  document.getElementById("feedbackContent").style.display = "none";
+  document.getElementById("taskInstruction").innerText = "Bitte zuerst eine Prüfung generieren.";
+  document.getElementById("articleTitle").innerText = "Quelltext";
+  document.getElementById("articleBody").innerHTML = "";
+  document.getElementById("wordCountLabel").innerText = "0";
+  clearOCR();
+  clearTaskUpload();
+  setSetupMode("generate");
+  updateWordCount();
+  nav("setup");
 }
 
 /* ================= UTILS ================= */
-
-function autoSave(){
-
-const t=document.getElementById("studentText").value;
-
-localStorage.setItem("student_text",t);
-
-document.getElementById("currentWordCount").innerText=
-countWords(t);
-
+function updateWordCount() {
+  const t = document.getElementById("studentText").value;
+  localStorage.setItem("student_text", t);
+  document.getElementById("currentWordCount").innerText = countWords(t);
 }
 
-function countWords(s){
-return s.trim().split(/\s+/).filter(a=>a).length;
+function countWords(s) {
+  return (s || "").trim().split(/\s+/).filter(a => a).length;
 }
 
-function nav(id){
-
-document.querySelectorAll("section")
-.forEach(s=>s.classList.remove("active"));
-
-document.querySelectorAll("nav button")
-.forEach(b=>b.classList.remove("active"));
-
-document.getElementById(id).classList.add("active");
-document.getElementById("nav-"+id).classList.add("active");
-
+function nav(id) {
+  document.querySelectorAll("section").forEach(s => s.classList.remove("active"));
+  document.querySelectorAll("nav button").forEach(b => b.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+  document.getElementById("nav-" + id).classList.add("active");
+  window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
+function escapeHtml(str) {
+  return String(str).replace(/[&<>"']/g, m => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;"
+  }[m]));
+}
 </script>
 
 </body>
