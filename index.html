@@ -992,6 +992,23 @@ Sprache (max. 6 BE)
 
 const CONFIG = { storedData: {} };
 
+/* ================= API HELPER (sends auth header) ================= */
+async function apiCall(endpoint, body) {
+  const res = await fetch(API_BASE + endpoint, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Access-Password": ACCESS_PASSWORD
+    },
+    body: JSON.stringify(body)
+  });
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({}));
+    throw new Error(errData.error || `Serverfehler (${res.status})`);
+  }
+  return res.json();
+}
+
 /* ================= LOGIN ================= */
 function checkPassword() {
   const input = document.getElementById("accessPassword").value.trim();
@@ -1038,20 +1055,11 @@ async function generateExam() {
   document.getElementById("setupLoader").style.display = "block";
 
   try {
-    const res = await fetch(API_BASE + "/api/generate", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        topic,
-        source_len_words: length,
-        prompt_template: GENERATION_PROMPT_TEMPLATE
-      })
+    const data = await apiCall("/api/generate", {
+      topic,
+      source_len_words: length,
+      prompt_template: GENERATION_PROMPT_TEMPLATE
     });
-    if (!res.ok) {
-      const errData = await res.json().catch(() => ({}));
-      throw new Error(errData.error || `Serverfehler (${res.status})`);
-    }
-    const data = await res.json();
 
     const content = data.article_text && data.task_instruction
       ? data
@@ -1108,16 +1116,7 @@ async function handleTaskUpload(fileList) {
 
   try {
     const base64List = taskUploadImages.map(p => p.base64).filter(Boolean);
-    const res = await fetch(API_BASE + "/api/parse-task", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ images: base64List })
-    });
-    if (!res.ok) {
-      const errData = await res.json().catch(() => ({}));
-      throw new Error(errData.error || "Erkennung fehlgeschlagen");
-    }
-    const data = await res.json();
+    const data = await apiCall("/api/parse-task", { images: base64List });
 
     document.getElementById("parsedTaskInstruction").value = data.task_instruction || "";
     document.getElementById("parsedArticleText").value = data.article_text || "";
@@ -1244,21 +1243,12 @@ async function submitForCorrection() {
   document.getElementById("feedbackContent").style.display = "none";
 
   try {
-    const res = await fetch(API_BASE + "/api/grade", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        source_text_de: CONFIG.storedData.article_text,
-        task_en: CONFIG.storedData.task_instruction,
-        student_text_en: text,
-        rubric_prompt: CORRECTION_RUBRIC_PROMPT
-      })
+    const data = await apiCall("/api/grade", {
+      source_text_de: CONFIG.storedData.article_text,
+      task_en: CONFIG.storedData.task_instruction,
+      student_text_en: text,
+      rubric_prompt: CORRECTION_RUBRIC_PROMPT
     });
-    if (!res.ok) {
-      const errData = await res.json().catch(() => ({}));
-      throw new Error(errData.error || `Serverfehler (${res.status})`);
-    }
-    const data = await res.json();
 
     // Display scores
     const cs = data.scores?.content_textstructure;
@@ -1318,13 +1308,7 @@ async function handleOCRFiles(fileList) {
       const base64 = await fileToBase64(page.file);
       page.base64 = base64;
 
-      const res = await fetch(API_BASE + "/api/ocr", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ image_base64: base64 })
-      });
-      if (!res.ok) throw new Error("OCR fehlgeschlagen");
-      const data = await res.json();
+      const data = await apiCall("/api/ocr", { image_base64: base64 });
 
       page.text = data.text || "";
       page.status = "done";

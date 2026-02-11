@@ -1,3 +1,60 @@
+/* ================= AUTH & RATE LIMITING ================= */
+const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute
+const MAX_REQUESTS_PER_WINDOW = 10;   // max 10 requests per minute per IP
+const rateLimitMap = new Map();
+
+function checkAuth(request, env) {
+  const authHeader = request.headers.get("X-Access-Password") || "";
+  const accessPassword = env.ACCESS_PASSWORD || "stanna2026";
+  if (authHeader !== accessPassword) {
+    return jsonResponse({ error: "Nicht autorisiert. Falsches Passwort." }, 401);
+  }
+  return null; // auth OK
+}
+
+function checkRateLimit(request) {
+  const ip = request.headers.get("CF-Connecting-IP") || "unknown";
+  const now = Date.now();
+
+  if (!rateLimitMap.has(ip)) {
+    rateLimitMap.set(ip, { count: 1, windowStart: now });
+    return null; // OK
+  }
+
+  const entry = rateLimitMap.get(ip);
+
+  // Reset window if expired
+  if (now - entry.windowStart > RATE_LIMIT_WINDOW) {
+    entry.count = 1;
+    entry.windowStart = now;
+    return null; // OK
+  }
+
+  entry.count++;
+
+  if (entry.count > MAX_REQUESTS_PER_WINDOW) {
+    return jsonResponse({
+      error: "Zu viele Anfragen. Bitte warte eine Minute und versuche es erneut."
+    }, 429);
+  }
+
+  return null; // OK
+}
+
+// Cleanup old entries periodically (every 100 requests)
+let requestCounter = 0;
+function cleanupRateLimitMap() {
+  requestCounter++;
+  if (requestCounter % 100 === 0) {
+    const now = Date.now();
+    for (const [ip, entry] of rateLimitMap) {
+      if (now - entry.windowStart > RATE_LIMIT_WINDOW * 5) {
+        rateLimitMap.delete(ip);
+      }
+    }
+  }
+}
+
 export default {
   async fetch(request, env) {
     const { pathname } = new URL(request.url);
@@ -8,6 +65,18 @@ export default {
     }
 
     try {
+      // Only protect /api/* routes
+      if (pathname.startsWith("/api/")) {
+        // 1. Auth check
+        const authError = checkAuth(request, env);
+        if (authError) return authError;
+
+        // 2. Rate limit check
+        const rateLimitError = checkRateLimit(request);
+        if (rateLimitError) return rateLimitError;
+        cleanupRateLimitMap();
+      }
+
       if (pathname === "/api/generate" && request.method === "POST") {
         return await handleGenerate(request, env);
       }
@@ -291,7 +360,7 @@ function corsHeaders() {
   return {
     "Content-Type": "application/json",
     "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Headers": "Content-Type",
+    "Access-Control-Allow-Headers": "Content-Type, X-Access-Password",
     "Access-Control-Allow-Methods": "POST, OPTIONS"
   };
 }
