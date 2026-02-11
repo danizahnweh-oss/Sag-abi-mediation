@@ -1,305 +1,492 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Abi Englisch – Mediation Trainer (BY)</title>
-  <style>
-    :root { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
-    body { margin: 0; background:#0b1020; color:#eaf0ff; }
-    header { padding: 20px; border-bottom: 1px solid rgba(255,255,255,.08); background: rgba(255,255,255,.02); }
-    main { max-width: 1100px; margin: 0 auto; padding: 20px; }
-    .grid { display:grid; gap: 16px; grid-template-columns: 1fr; }
-    @media (min-width: 980px){ .grid { grid-template-columns: 1.1fr .9fr; } }
-    .card { background: rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08); border-radius: 18px; padding: 16px; }
-    h1,h2,h3 { margin: 0 0 12px; }
-    label { display:block; margin: 10px 0 6px; color: rgba(234,240,255,.85); }
-    select,input[type="number"],input[type="text"],textarea {
-      width: 100%; box-sizing: border-box;
-      background: rgba(0,0,0,.25);
-      color:#eaf0ff; border:1px solid rgba(255,255,255,.14);
-      border-radius: 12px; padding: 10px 12px; outline:none;
-    }
-    textarea { min-height: 160px; resize: vertical; }
-    .row { display:flex; gap: 10px; flex-wrap: wrap; align-items: center; }
-    button {
-      background: #3b82f6; color: white; border: 0; border-radius: 12px;
-      padding: 10px 12px; cursor:pointer; font-weight: 650;
-    }
-    button.secondary { background: rgba(255,255,255,.10); }
-    button.danger { background:#ef4444; }
-    button:disabled { opacity:.6; cursor:not-allowed; }
-    .muted { color: rgba(234,240,255,.72); font-size: 14px; line-height: 1.35; }
-    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono"; }
-    .pill { display:inline-block; padding: 6px 10px; border-radius: 999px; background: rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.10); font-size: 12px; }
-    .kpi { display:flex; gap: 10px; flex-wrap: wrap; }
-    .kpi .box { padding: 10px 12px; border-radius: 14px; background: rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.10); }
-    .split { display:grid; gap: 10px; grid-template-columns: 1fr; }
-    @media (min-width: 700px){ .split { grid-template-columns: 1fr 1fr; } }
-    .hr { height: 1px; background: rgba(255,255,255,.10); margin: 14px 0; }
-    .small { font-size: 12px; color: rgba(234,240,255,.65); }
-    .warn { color: #ffd38a; }
-    .ok { color: #8ef0c3; }
-    .err { color: #ff9aa2; }
-    .badge { font-weight: 700; }
-  </style>
-  <!-- OCR (Client-side). Optional. -->
-  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>St. Anna Mediation Trainer</title>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+<style>
+/* --- Original Design (kept) --- */
+
+:root {
+--primary:#2c3e50;
+--secondary:#34495e;
+--accent:#2980b9;
+--bg:#f4f6f7;
+--text:#2c3e50;
+--paper:#ffffff;
+--warning:#c0392b;
+}
+
+body{
+font-family:'Segoe UI','Roboto','Helvetica',sans-serif;
+background:var(--bg);
+margin:0;
+color:var(--text);
+min-height:100vh;
+display:flex;
+flex-direction:column;
+}
+
+/* LOGIN */
+
+#login-screen{
+position:fixed;
+inset:0;
+background:var(--primary);
+display:flex;
+justify-content:center;
+align-items:center;
+z-index:9999;
+}
+
+.login-box{
+background:white;
+padding:2.5rem;
+border-radius:8px;
+box-shadow:0 10px 25px rgba(0,0,0,.2);
+text-align:center;
+max-width:420px;
+width:90%;
+}
+
+.login-error{color:var(--warning);display:none;font-weight:bold;}
+
+/* HEADER */
+
+#app-wrapper{display:none;flex-direction:column;min-height:100vh;}
+
+header{
+background:var(--primary);
+color:white;
+padding:1rem 2rem;
+display:flex;
+justify-content:space-between;
+align-items:center;
+}
+
+nav{
+background:white;
+padding:0 2rem;
+display:flex;
+gap:1rem;
+box-shadow:0 2px 4px rgba(0,0,0,.05);
+}
+
+nav button{
+background:none;
+border:none;
+padding:1rem .5rem;
+cursor:pointer;
+font-weight:600;
+color:var(--secondary);
+border-bottom:3px solid transparent;
+}
+
+nav button.active{
+color:var(--accent);
+border-bottom-color:var(--accent);
+}
+
+main{
+flex:1;
+max-width:1000px;
+margin:2rem auto;
+padding:1rem;
+width:100%;
+}
+
+section{
+display:none;
+background:var(--paper);
+padding:2rem;
+border-radius:8px;
+box-shadow:0 2px 6px rgba(0,0,0,.05);
+margin-bottom:2rem;
+}
+
+section.active{display:block;}
+
+.task-box{
+background:#eef2f5;
+border-left:5px solid var(--accent);
+padding:1.2rem;
+margin:1rem 0;
+}
+
+textarea{
+width:100%;
+min-height:400px;
+padding:1.2rem;
+font-family:'Courier New',monospace;
+font-size:1rem;
+border:1px solid #ddd;
+border-radius:4px;
+}
+
+.btn{
+background:var(--accent);
+color:white;
+border:none;
+padding:.7rem 1.4rem;
+border-radius:4px;
+cursor:pointer;
+font-weight:600;
+}
+
+.btn:hover{background:#1f6391;}
+
+.loader{
+border:4px solid #eee;
+border-top:4px solid var(--accent);
+border-radius:50%;
+width:35px;
+height:35px;
+animation:spin 1s linear infinite;
+display:none;
+margin:20px auto;
+}
+
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
 </head>
+
 <body>
+
+<!-- LOGIN -->
+
+<div id="login-screen">
+<div class="login-box">
+<h2>🔒 Zugriff geschützt</h2>
+<p>Bitte Passwort eingeben</p>
+
+<input type="password" id="accessPassword"
+placeholder="Passwort..."
+onkeyup="if(event.key==='Enter')checkPassword()">
+
+<br><br>
+
+<button class="btn" onclick="checkPassword()">Starten</button>
+
+<div id="loginError" class="login-error">Falsches Passwort</div>
+</div>
+</div>
+
+<!-- APP -->
+
+<div id="app-wrapper">
+
 <header>
-  <div class="row" style="justify-content:space-between;">
-    <div>
-      <h1>Abi Englisch (BY) – Mediation Trainer</h1>
-      <div class="muted">Thema wählen → Ausgangstext + Task generieren → Lösung tippen oder Foto → Bewertung (B1+/B2 Raster)</div>
-    </div>
-    <span class="pill">MVP • self-host</span>
-  </div>
+<h1>Abitur Mediation Trainer <span style="font-size:.8rem">St. Anna</span></h1>
+<div style="opacity:.8">2026</div>
 </header>
 
-<main class="grid">
-  <section class="card">
-    <h2>1) Aufgabe generieren</h2>
+<nav>
+<button id="nav-setup" class="active" onclick="nav('setup')">1. Setup</button>
+<button id="nav-task" onclick="nav('task')">2. Task</button>
+<button id="nav-write" onclick="nav('write')">3. Writing</button>
+<button id="nav-feedback" onclick="nav('feedback')">4. Feedback</button>
+</nav>
 
-    <div class="split">
-      <div>
-        <label>Thema</label>
-        <select id="topic">
-          <option value="social media & mental health">Social media & mental health</option>
-          <option value="AI in everyday life (school/work)">AI in everyday life (school/work)</option>
-          <option value="climate policy & individual responsibility">Climate policy & individual responsibility</option>
-          <option value="migration & integration (local community)">Migration & integration (local community)</option>
-          <option value="consumerism & sustainability">Consumerism & sustainability</option>
-          <option value="youth participation & democracy">Youth participation & democracy</option>
-        </select>
+<main>
 
-        <label>Gewünschte Länge des deutschen Originaltexts (Wörter)</label>
-        <input id="sourceLen" type="number" min="120" max="420" value="220" />
-        <div class="small">Tipp: 180–260 Wörter ist für Training oft ideal.</div>
-      </div>
+<!-- SETUP -->
 
-      <div>
-        <label>Textsorte / Situation (optional)</label>
-        <input id="genre" type="text" placeholder="z.B. E-Mail an Austauschpartner / Infotext für Eltern / Message an Schulleitung" />
-        <label>Adressat (optional)</label>
-        <input id="audience" type="text" placeholder="z.B. host family, school principal, local youth club..." />
-        <label>Aspekte (2–3) (optional)</label>
-        <input id="aspects" type="text" placeholder="z.B. benefits, risks, advice (comma-separated)" />
-      </div>
-    </div>
+<section id="setup" class="active">
 
-    <div class="row" style="margin-top:12px;">
-      <button id="btnGenerate">Generate mediation task</button>
-      <button id="btnReset" class="secondary">Reset</button>
-      <span id="genStatus" class="muted"></span>
-    </div>
+<h2>Prüfung erstellen</h2>
 
-    <div class="hr"></div>
+<label>Themenfeld</label><br>
 
-    <h3>Deutscher Originaltext</h3>
-    <textarea id="sourceText" class="mono" placeholder="Hier erscheint der deutsche Ausgangstext..." readonly></textarea>
+<select id="topicSelect">
+<option>Science & Technology</option>
+<option>Global Challenges</option>
+<option>Media & Society</option>
+<option>Politics & Change</option>
+<option>Future of Work</option>
+</select>
 
-    <h3 style="margin-top:12px;">Task (English)</h3>
-    <textarea id="taskText" class="mono" placeholder="Here appears the English task..." readonly></textarea>
-  </section>
+<br><br>
 
-  <section class="card">
-    <h2>2) Schülerlösung</h2>
+<label>Länge (Wörter)</label><br>
 
-    <label>Text eingeben (oder per OCR befüllen)</label>
-    <textarea id="studentText" class="mono" placeholder="Write your mediation here..."></textarea>
+<input type="number" id="sourceLength" value="600">
 
-    <div class="row">
-      <div style="flex:1 1 260px;">
-        <label>Oder Foto hochladen (OCR)</label>
-        <input id="photo" type="file" accept="image/*" />
-        <div class="small warn">Tesseract ist stark bei Druckschrift, bei Handschrift variabel. Für echte Handschrift: Vision-OCR serverseitig (siehe Backend).</div>
-      </div>
-      <div style="flex: 0 0 auto; align-self:flex-end;">
-        <button id="btnOCR" class="secondary">Run OCR</button>
-      </div>
-    </div>
+<br><br>
 
-    <div class="row" style="margin-top:10px;">
-      <label style="margin:0;">
-        <input id="useServerOcr" type="checkbox" />
-        OCR über Server/Vision nutzen (statt Tesseract im Browser)
-      </label>
-    </div>
+<button class="btn" onclick="generateExam()">Generieren</button>
 
-    <div class="hr"></div>
+<div id="setupLoader" class="loader"></div>
 
-    <h2>3) Korrektur & Bewertung</h2>
+</section>
 
-    <div class="row">
-      <button id="btnGrade">Grade according to BY rubric (B1+/B2)</button>
-      <span id="gradeStatus" class="muted"></span>
-    </div>
+<!-- TASK -->
 
-    <div class="hr"></div>
+<section id="task">
 
-    <div class="kpi" id="kpi" style="display:none;">
-      <div class="box"><div class="small">Inhalt & Textstruktur (0–4)</div><div class="badge" id="scoreContent">–</div></div>
-      <div class="box"><div class="small">Sprache (0–6)</div><div class="badge" id="scoreLang">–</div></div>
-      <div class="box"><div class="small">Gesamt (0–10)</div><div class="badge" id="scoreTotal">–</div></div>
-    </div>
+<h2>Mediation Task</h2>
 
-    <label>Feedback (rubric-referenced)</label>
-    <textarea id="feedback" class="mono" readonly placeholder="Feedback appears here..."></textarea>
+<div class="task-box" id="taskInstruction">
+Bitte zuerst generieren.
+</div>
 
-    <label>Marked-up suggestions (optional)</label>
-    <textarea id="corrections" class="mono" readonly placeholder="Optional: correction suggestions / improved version..."></textarea>
+<h3>Source Text</h3>
 
-    <div class="small">
-      Bewertungslogik basiert auf ISB-Raster „Sprachmittlung (B1+/B2 in Anteilen)“: Inhalt/Textstruktur 0–4, Sprache 0–6. (Quelle im Backend prompten)
-    </div>
-  </section>
+<h4 id="articleTitle"></h4>
+
+<div id="articleBody"></div>
+
+<p>Wörter: <span id="wordCountLabel">0</span></p>
+
+</section>
+
+<!-- WRITE -->
+
+<section id="write">
+
+<h2>Student Response</h2>
+
+<textarea id="studentText" oninput="autoSave()"></textarea>
+
+<br>
+
+Wörter: <b id="currentWordCount">0</b>
+
+<br><br>
+
+<button class="btn" onclick="submitForCorrection()">Abgeben</button>
+
+</section>
+
+<!-- FEEDBACK -->
+
+<section id="feedback">
+
+<h2>Bewertung</h2>
+
+<div id="feedbackLoader" class="loader"></div>
+
+<div id="feedbackContent"></div>
+
+</section>
+
 </main>
 
+<footer style="text-align:center;padding:2rem;color:#999">
+© 2026 St. Anna Gymnasium
+</footer>
+
+</div>
+
 <script>
-  const $ = (id) => document.getElementById(id);
 
-  const state = {
-    generated: null,
-    lastOCR: null,
-  };
+/* ================= CONFIG ================= */
 
-  function setStatus(el, msg, kind="") {
-    el.textContent = msg || "";
-    el.className = "muted " + (kind || "");
-  }
+const API_BASE =
+"https://sag-abi-mediation-api.sanktannagymnasium.workers.dev";
 
-  $("btnReset").addEventListener("click", () => {
-    $("sourceText").value = "";
-    $("taskText").value = "";
-    $("studentText").value = "";
-    $("feedback").value = "";
-    $("corrections").value = "";
-    $("kpi").style.display = "none";
-    setStatus($("genStatus"), "");
-    setStatus($("gradeStatus"), "");
-    state.generated = null;
-  });
-const API_BASE = "https://DEIN-WORKER-NAME.DEIN-ACCOUNT.workers.dev"; // kommt gleich
+const ACCESS_PASSWORD = "stanna2026";
 
-async function postJSON(url, data) {
-  const res = await fetch(API_BASE + url, {
-    method: "POST",
-    headers: { "Content-Type":"application/json" },
-    body: JSON.stringify(data)
-  });
-  if (!res.ok) {
-    const text = await res.text().catch(()=> "");
-    throw new Error(`HTTP ${res.status}: ${text || res.statusText}`);
-  }
-  return res.json();
+const CONFIG = {
+storedData:{}
+};
+
+/* ================= LOGIN ================= */
+
+function checkPassword(){
+
+const input=document.getElementById("accessPassword").value.trim();
+const err=document.getElementById("loginError");
+
+if(input===ACCESS_PASSWORD){
+
+sessionStorage.setItem("access","1");
+
+document.getElementById("login-screen").style.display="none";
+document.getElementById("app-wrapper").style.display="flex";
+
+err.style.display="none";
+
+}else{
+err.style.display="block";
 }
-  
-      method: "POST",
-      headers: { "Content-Type":"application/json" },
-      body: JSON.stringify(data)
-    });
-    if (!res.ok) {
-      const text = await res.text().catch(()=> "");
-      throw new Error(`HTTP ${res.status}: ${text || res.statusText}`);
-    }
-    return res.json();
-  }
+}
 
-  $("btnGenerate").addEventListener("click", async () => {
-    try {
-      setStatus($("genStatus"), "Generating…");
-      const payload = {
-        topic: $("topic").value,
-        source_len_words: Number($("sourceLen").value || 220),
-        genre_hint: $("genre").value || null,
-        audience_hint: $("audience").value || null,
-        aspects_hint: $("aspects").value || null
-      };
-      const data = await postJSON("/api/generate", payload);
-      state.generated = data;
-      $("sourceText").value = data.source_text_de || "";
-      $("taskText").value = data.task_en || "";
-      setStatus($("genStatus"), "Done.", "ok");
-    } catch (e) {
-      console.error(e);
-      setStatus($("genStatus"), e.message, "err");
-    }
-  });
+/* ================= INIT ================= */
 
-  $("btnOCR").addEventListener("click", async () => {
-    const file = $("photo").files?.[0];
-    if (!file) { alert("Bitte zuerst ein Bild auswählen."); return; }
+window.onload=function(){
 
-    try {
-      if ($("useServerOcr").checked) {
-        setStatus($("gradeStatus"), "Server OCR…");
-        // Send as base64 to backend (simple MVP).
-        const b64 = await new Promise((resolve, reject) => {
-          const r = new FileReader();
-          r.onload = () => resolve(r.result);
-          r.onerror = reject;
-          r.readAsDataURL(file);
-        });
-        const data = await postJSON("/api/ocr", { image_data_url: b64 });
-        $("studentText").value = (data.text || "").trim();
-        setStatus($("gradeStatus"), "OCR done.", "ok");
-        return;
-      }
+if(sessionStorage.getItem("access")==="1"){
+document.getElementById("login-screen").style.display="none";
+document.getElementById("app-wrapper").style.display="flex";
+}
 
-      setStatus($("gradeStatus"), "OCR (Tesseract) running…");
-      const { data: { text } } = await Tesseract.recognize(file, "eng+deu", {
-        logger: m => {
-          if (m.status && m.progress != null) {
-            setStatus($("gradeStatus"), `OCR: ${m.status} ${(m.progress*100).toFixed(0)}%`);
-          }
-        }
-      });
-      state.lastOCR = text;
-      $("studentText").value = (text || "").trim();
-      setStatus($("gradeStatus"), "OCR done.", "ok");
-    } catch (e) {
-      console.error(e);
-      setStatus($("gradeStatus"), e.message, "err");
-    }
-  });
+const saved=localStorage.getItem("exam_data");
+if(saved){
+CONFIG.storedData=JSON.parse(saved);
+renderExam(CONFIG.storedData);
+}
 
-  $("btnGrade").addEventListener("click", async () => {
-    try {
-      if (!state.generated?.source_text_de || !state.generated?.task_en) {
-        alert("Bitte zuerst eine Aufgabe generieren.");
-        return;
-      }
-      const student = $("studentText").value.trim();
-      if (student.length < 40) {
-        alert("Bitte eine sinnvolle Lösung eintragen (mindestens ~40 Zeichen).");
-        return;
-      }
+const st=localStorage.getItem("student_text");
+if(st){
+document.getElementById("studentText").value=st;
+autoSave();
+}
 
-      setStatus($("gradeStatus"), "Grading…");
+};
 
-      const payload = {
-        source_text_de: state.generated.source_text_de,
-        task_en: state.generated.task_en,
-        student_text_en: student
-      };
+/* ================= GENERATE ================= */
 
-      const data = await postJSON("/api/grade", payload);
+async function generateExam(){
 
-      $("kpi").style.display = "flex";
-      $("scoreContent").textContent = `${data.scores?.content_textstructure ?? "–"}/4`;
-      $("scoreLang").textContent = `${data.scores?.language ?? "–"}/6`;
-      $("scoreTotal").textContent = `${data.scores?.total ?? "–"}/10`;
+const topic=document.getElementById("topicSelect").value;
+const length=document.getElementById("sourceLength").value;
 
-      $("feedback").value = data.feedback || "";
-      $("corrections").value = data.corrections || "";
+document.getElementById("setupLoader").style.display="block";
 
-      setStatus($("gradeStatus"), "Done.", "ok");
-    } catch (e) {
-      console.error(e);
-      setStatus($("gradeStatus"), e.message, "err");
-    }
-  });
+try{
+
+const res=await fetch(API_BASE+"/api/generate",{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({
+topic:topic,
+source_len_words:Number(length)
+})
+});
+
+if(!res.ok) throw new Error("Serverfehler");
+
+const data=await res.json();
+
+const content={
+headline:"Generated Task",
+article_text:data.source_text_de,
+task_instruction:data.task_en
+};
+
+CONFIG.storedData=content;
+localStorage.setItem("exam_data",JSON.stringify(content));
+
+renderExam(content);
+nav("task");
+
+}catch(e){
+alert("Fehler: "+e.message);
+}
+
+document.getElementById("setupLoader").style.display="none";
+}
+
+/* ================= RENDER ================= */
+
+function renderExam(d){
+
+document.getElementById("taskInstruction").innerText=d.task_instruction;
+document.getElementById("articleTitle").innerText=d.headline;
+
+document.getElementById("articleBody").innerHTML=
+d.article_text.split("\n")
+.map(p=>`<p>${p}</p>`).join("");
+
+document.getElementById("wordCountLabel").innerText=
+countWords(d.article_text);
+
+}
+
+/* ================= SUBMIT ================= */
+
+async function submitForCorrection(){
+
+const text=document.getElementById("studentText").value;
+
+if(countWords(text)<50){
+alert("Text zu kurz");
+return;
+}
+
+nav("feedback");
+
+document.getElementById("feedbackLoader").style.display="block";
+
+try{
+
+const res=await fetch(API_BASE+"/api/grade",{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({
+source_text_de:CONFIG.storedData.article_text,
+task_en:CONFIG.storedData.task_instruction,
+student_text_en:text
+})
+});
+
+if(!res.ok) throw new Error("Serverfehler");
+
+const data=await res.json();
+
+const out=`
+# Bewertung
+
+**Gesamt: ${data.scores.total}/10**
+
+## Inhalt ${data.scores.content_textstructure}/4
+
+## Sprache ${data.scores.language}/6
+
+## Feedback
+
+${data.feedback}
+
+## Korrekturen
+
+${data.corrections}
+`;
+
+document.getElementById("feedbackContent").innerHTML=
+marked.parse(out);
+
+}catch(e){
+alert("Fehler: "+e.message);
+}
+
+document.getElementById("feedbackLoader").style.display="none";
+}
+
+/* ================= UTILS ================= */
+
+function autoSave(){
+
+const t=document.getElementById("studentText").value;
+
+localStorage.setItem("student_text",t);
+
+document.getElementById("currentWordCount").innerText=
+countWords(t);
+
+}
+
+function countWords(s){
+return s.trim().split(/\s+/).filter(a=>a).length;
+}
+
+function nav(id){
+
+document.querySelectorAll("section")
+.forEach(s=>s.classList.remove("active"));
+
+document.querySelectorAll("nav button")
+.forEach(b=>b.classList.remove("active"));
+
+document.getElementById(id).classList.add("active");
+document.getElementById("nav-"+id).classList.add("active");
+
+}
+
 </script>
+
 </body>
 </html>
