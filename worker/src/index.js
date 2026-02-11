@@ -67,8 +67,25 @@ async function openaiResponses({ env, model, instructions, input, schema }) {
 
   const data = await resp.json();
   if (!resp.ok) throw new Error(`OpenAI error: ${resp.status} ${JSON.stringify(data)}`);
-  const out = (data.output_text || "").trim();
+    // Robust extraction for Responses API: take the first text chunk if output_text is empty
+  let out = (data.output_text || "").trim();
+
+  if (!out && Array.isArray(data.output)) {
+    for (const item of data.output) {
+      if (item?.type === "message" && Array.isArray(item.content)) {
+        for (const c of item.content) {
+          if (c?.type === "output_text" && typeof c.text === "string") {
+            out = c.text.trim();
+            break;
+          }
+        }
+      }
+      if (out) break;
+    }
+  }
+
   return { raw: out, data };
+
 }
 
 const RUBRIC = {
