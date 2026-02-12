@@ -780,6 +780,14 @@ footer {
            autocomplete="off"
            style="margin-bottom:.5rem;">
 
+    <select id="studentCourse" class="login-input" style="margin-bottom:.5rem;">
+      <option value="" disabled selected>Kurs wählen …</option>
+      <option value="2e1">2e1</option>
+      <option value="2e2">2e2</option>
+      <option value="2e3">2e3</option>
+      <option value="2e4">2e4</option>
+    </select>
+
     <input type="password" id="accessPassword"
            class="login-input"
            placeholder="Passwort eingeben …"
@@ -1300,6 +1308,7 @@ async function apiCall(endpoint, body) {
 function checkPassword() {
   const input = document.getElementById("accessPassword").value.trim();
   const name = document.getElementById("studentName").value.trim();
+  const course = document.getElementById("studentCourse").value;
   const err = document.getElementById("loginError");
   if (input === ACCESS_PASSWORD) {
     if (!name) {
@@ -1308,13 +1317,20 @@ function checkPassword() {
       document.getElementById("studentName").focus();
       return;
     }
+    if (!course) {
+      err.textContent = "Bitte wähle deinen Kurs aus.";
+      err.style.display = "block";
+      document.getElementById("studentCourse").focus();
+      return;
+    }
     sessionStorage.setItem("access", "1");
     sessionStorage.setItem("student_name", name);
+    sessionStorage.setItem("student_course", course);
     document.getElementById("login-screen").style.display = "none";
     document.getElementById("app-wrapper").style.display = "flex";
     err.style.display = "none";
-    // Show name in header
-    document.getElementById("studentGreeting").textContent = name;
+    // Show name + course in header
+    document.getElementById("studentGreeting").textContent = `${name} · ${course}`;
     document.getElementById("studentGreeting").style.display = "inline";
   } else {
     err.textContent = "Falsches Passwort – bitte nochmal versuchen.";
@@ -1372,7 +1388,8 @@ window.onload = function () {
     document.getElementById("app-wrapper").style.display = "flex";
     const name = sessionStorage.getItem("student_name") || "";
     if (name) {
-      document.getElementById("studentGreeting").textContent = name;
+      const course = sessionStorage.getItem("student_course") || "";
+      document.getElementById("studentGreeting").textContent = course ? `${name} · ${course}` : name;
       document.getElementById("studentGreeting").style.display = "inline";
     }
   }
@@ -1631,6 +1648,7 @@ async function submitForCorrection() {
     // Save to server (for teacher dashboard) – fire and forget
     apiCall("/api/submit-result", {
       student_name: sessionStorage.getItem("student_name") || "Unbekannt",
+      course: sessionStorage.getItem("student_course") || "",
       topic: CONFIG.storedData.headline || "—",
       content: cs,
       language: ls,
