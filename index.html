@@ -7,6 +7,7 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 
@@ -39,6 +40,29 @@
   --font-display: 'DM Serif Display', Georgia, serif;
   --font-body: 'DM Sans', -apple-system, sans-serif;
   --font-mono: 'JetBrains Mono', 'Courier New', monospace;
+}
+
+/* ====== DARK MODE ====== */
+[data-theme="dark"] {
+  --ink: #e4e4ed;
+  --ink-light: #b0b0c8;
+  --ink-muted: #7878a0;
+  --accent: #60a5fa;
+  --accent-hover: #93bbfd;
+  --accent-soft: rgba(96, 165, 250, 0.15);
+  --accent-glow: rgba(96, 165, 250, 0.08);
+  --surface: #1e1e2e;
+  --bg: #14141f;
+  --bg-warm: #1a1a28;
+  --border: #2e2e42;
+  --border-light: #252538;
+  --success: #34d399;
+  --success-bg: rgba(52,211,153,0.1);
+  --warning: #f87171;
+  --warning-bg: rgba(248,113,113,0.1);
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.2);
+  --shadow-md: 0 4px 16px rgba(0,0,0,0.3);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,0.4);
 }
 
 *,*::before,*::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -569,6 +593,130 @@ footer {
   flex-wrap: wrap;
 }
 
+/* ====== DARK MODE TOGGLE ====== */
+.theme-toggle {
+  background: var(--border);
+  border: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  transition: all .2s;
+  flex-shrink: 0;
+}
+.theme-toggle:hover { background: var(--accent-soft); }
+
+/* ====== TIMER ====== */
+.timer-bar {
+  display: none;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: .8rem 1.2rem;
+  margin-bottom: 1rem;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.timer-bar.active { display: flex; }
+.timer-display {
+  font-family: var(--font-mono);
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--ink);
+  min-width: 80px;
+}
+.timer-display.warning { color: var(--warning); animation: pulse 1s infinite; }
+.timer-label {
+  font-size: .8rem;
+  color: var(--ink-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+.timer-controls { display: flex; gap: .4rem; margin-left: auto; }
+.timer-controls button {
+  background: var(--border);
+  border: none;
+  padding: .4rem .7rem;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: .8rem;
+  font-weight: 600;
+  color: var(--ink-light);
+  transition: all .15s;
+}
+.timer-controls button:hover { background: var(--accent-soft); color: var(--accent); }
+
+.timer-setup {
+  display: flex;
+  align-items: center;
+  gap: .8rem;
+  flex-wrap: wrap;
+}
+.timer-setup input[type="number"] {
+  width: 70px;
+  padding: .4rem .6rem;
+  text-align: center;
+}
+
+/* ====== PROGRESS TRACKER ====== */
+.history-empty {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: var(--ink-muted);
+}
+.history-empty .empty-icon { font-size: 2.5rem; margin-bottom: .8rem; }
+
+.history-chart {
+  width: 100%;
+  height: 220px;
+  margin: 1rem 0;
+}
+.history-chart canvas { width: 100% !important; height: 100% !important; }
+
+.history-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .88rem;
+}
+.history-table th {
+  text-align: left;
+  padding: .6rem .8rem;
+  font-size: .75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--ink-muted);
+  border-bottom: 2px solid var(--border);
+}
+.history-table td {
+  padding: .6rem .8rem;
+  border-bottom: 1px solid var(--border-light);
+  color: var(--ink-light);
+}
+.history-table tr:hover td { background: var(--accent-glow); }
+.history-score {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  color: var(--accent);
+}
+.history-delete {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--ink-muted);
+  font-size: .85rem;
+  padding: .2rem;
+  transition: color .15s;
+}
+.history-delete:hover { color: var(--warning); }
+
 /* ====== MODE TOGGLE ====== */
 .mode-toggle {
   display: grid;
@@ -642,7 +790,10 @@ footer {
 
   <header>
     <h1>Mediation <span>Trainer</span></h1>
-    <div class="header-meta">Created by DZ · St. Anna</div>
+    <div style="display:flex;align-items:center;gap:.8rem;">
+      <div class="header-meta">Created by DZ · St. Anna</div>
+      <button class="theme-toggle" onclick="toggleDarkMode()" title="Dark Mode umschalten" id="themeToggleBtn">🌙</button>
+    </div>
   </header>
 
   <nav>
@@ -657,6 +808,9 @@ footer {
     </button>
     <button id="nav-feedback" onclick="nav('feedback')">
       <span class="step-num">4</span> Bewertung
+    </button>
+    <button id="nav-progress" onclick="nav('progress')" style="margin-left:auto;">
+      <span class="step-num">📊</span> Fortschritt
     </button>
   </nav>
 
@@ -811,8 +965,29 @@ footer {
 
     <!-- ====== STEP 3: WRITE ====== -->
     <section id="write">
+      <!-- Timer Bar -->
+      <div class="timer-bar" id="timerBar">
+        <div>
+          <div class="timer-label">Verbleibende Zeit</div>
+          <div class="timer-display" id="timerDisplay">60:00</div>
+        </div>
+        <div class="timer-controls">
+          <button onclick="pauseTimer()" id="timerPauseBtn">⏸ Pause</button>
+          <button onclick="stopTimer()">✕ Stopp</button>
+        </div>
+      </div>
+
       <div class="card">
-        <h2 class="card-header">Deine Mediation</h2>
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem;margin-bottom:1rem;">
+          <h2 class="card-header" style="margin-bottom:0">Deine Mediation</h2>
+          <!-- Timer Setup (when not running) -->
+          <div class="timer-setup" id="timerSetup">
+            <label style="margin:0;text-transform:none;font-size:.85rem;letter-spacing:0;">⏱ Prüfungsmodus:</label>
+            <input type="number" id="timerMinutes" value="60" min="5" max="180" step="5">
+            <span style="font-size:.85rem;color:var(--ink-muted)">Min</span>
+            <button class="btn btn-small btn-secondary" onclick="startTimer()">Timer starten</button>
+          </div>
+        </div>
         <textarea id="studentText" placeholder="Write your mediation here …" oninput="updateWordCount()"></textarea>
 
         <div class="write-toolbar">
@@ -910,6 +1085,65 @@ footer {
           <button class="btn btn-secondary btn-small" onclick="resetAll()">
             Neue Aufgabe starten
           </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====== STEP 5: PROGRESS ====== -->
+    <section id="progress">
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem;">
+          <h2 class="card-header" style="margin-bottom:0">Dein Fortschritt</h2>
+          <button class="btn btn-small btn-secondary" onclick="clearHistory()" id="clearHistoryBtn" style="display:none;">
+            Verlauf löschen
+          </button>
+        </div>
+
+        <div id="progressEmpty" class="history-empty">
+          <div class="empty-icon">📈</div>
+          <p>Noch keine Ergebnisse vorhanden.</p>
+          <p style="font-size:.85rem;">Deine Bewertungen erscheinen hier nach jeder Abgabe.</p>
+        </div>
+
+        <div id="progressContent" style="display:none;">
+          <div class="history-chart">
+            <canvas id="progressChart"></canvas>
+          </div>
+
+          <!-- Stats summary -->
+          <div class="scores-grid" style="margin:1.5rem 0;">
+            <div class="score-card">
+              <div class="score-label">Versuche</div>
+              <div class="score-value" id="statAttempts">0</div>
+            </div>
+            <div class="score-card">
+              <div class="score-label">Durchschnitt</div>
+              <div class="score-value" id="statAverage">–</div>
+              <div class="score-max">von 10 BE</div>
+            </div>
+            <div class="score-card total">
+              <div class="score-label">Bestes Ergebnis</div>
+              <div class="score-value" id="statBest">–</div>
+              <div class="score-max">von 10 BE</div>
+            </div>
+          </div>
+
+          <h3 style="font-family:var(--font-display);margin-bottom:.8rem;">Vergangene Versuche</h3>
+          <div style="overflow-x:auto;">
+            <table class="history-table">
+              <thead>
+                <tr>
+                  <th>Datum</th>
+                  <th>Thema</th>
+                  <th>Inhalt</th>
+                  <th>Sprache</th>
+                  <th>Gesamt</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="historyTableBody"></tbody>
+            </table>
+          </div>
         </div>
       </div>
     </section>
@@ -1259,6 +1493,17 @@ async function submitForCorrection() {
     document.getElementById("scoreLang").textContent = ls != null ? ls : "–";
     document.getElementById("scoreTotal").textContent = ts != null ? ts : "–";
 
+    // Save to history
+    saveToHistory({
+      topic: CONFIG.storedData.headline || document.getElementById("topicSelect")?.value || "—",
+      content: cs,
+      language: ls,
+      total: ts
+    });
+
+    // Stop timer if running
+    stopTimer();
+
     // Display feedback
     const feedbackMd = (data.feedback || "") + (data.corrections ? "\n\n## Korrekturen\n" + data.corrections : "");
     document.getElementById("feedbackBody").innerHTML = marked.parse(feedbackMd);
@@ -1469,8 +1714,10 @@ function nav(id) {
   document.querySelectorAll("section").forEach(s => s.classList.remove("active"));
   document.querySelectorAll("nav button").forEach(b => b.classList.remove("active"));
   document.getElementById(id).classList.add("active");
-  document.getElementById("nav-" + id).classList.add("active");
+  const navBtn = document.getElementById("nav-" + id);
+  if (navBtn) navBtn.classList.add("active");
   window.scrollTo({ top: 0, behavior: "smooth" });
+  if (id === "progress") renderProgress();
 }
 
 function escapeHtml(str) {
@@ -1478,6 +1725,261 @@ function escapeHtml(str) {
     "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;"
   }[m]));
 }
+
+/* ================= DARK MODE ================= */
+function toggleDarkMode() {
+  const html = document.documentElement;
+  const isDark = html.getAttribute("data-theme") === "dark";
+  html.setAttribute("data-theme", isDark ? "light" : "dark");
+  localStorage.setItem("theme", isDark ? "light" : "dark");
+  document.getElementById("themeToggleBtn").textContent = isDark ? "🌙" : "☀️";
+  // Update chart colors if chart exists
+  if (progressChartInstance) renderProgressChart();
+}
+
+function initTheme() {
+  const saved = localStorage.getItem("theme");
+  const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+  const theme = saved || (prefersDark ? "dark" : "light");
+  document.documentElement.setAttribute("data-theme", theme);
+  document.getElementById("themeToggleBtn").textContent = theme === "dark" ? "☀️" : "🌙";
+}
+
+/* ================= TIMER ================= */
+let timerInterval = null;
+let timerSeconds = 0;
+let timerPaused = false;
+
+function startTimer() {
+  const minutes = parseInt(document.getElementById("timerMinutes").value) || 60;
+  timerSeconds = minutes * 60;
+  timerPaused = false;
+
+  document.getElementById("timerBar").classList.add("active");
+  document.getElementById("timerSetup").style.display = "none";
+  updateTimerDisplay();
+
+  timerInterval = setInterval(() => {
+    if (timerPaused) return;
+    timerSeconds--;
+    updateTimerDisplay();
+
+    if (timerSeconds <= 0) {
+      clearInterval(timerInterval);
+      timerInterval = null;
+      document.getElementById("timerDisplay").textContent = "00:00";
+      document.getElementById("timerDisplay").classList.add("warning");
+      alert("⏰ Die Zeit ist abgelaufen! Du kannst deinen Text trotzdem noch abgeben.");
+    }
+  }, 1000);
+}
+
+function pauseTimer() {
+  timerPaused = !timerPaused;
+  document.getElementById("timerPauseBtn").textContent = timerPaused ? "▶ Weiter" : "⏸ Pause";
+}
+
+function stopTimer() {
+  if (timerInterval) {
+    clearInterval(timerInterval);
+    timerInterval = null;
+  }
+  timerSeconds = 0;
+  timerPaused = false;
+  document.getElementById("timerBar").classList.remove("active");
+  document.getElementById("timerSetup").style.display = "flex";
+  document.getElementById("timerDisplay").classList.remove("warning");
+  document.getElementById("timerPauseBtn").textContent = "⏸ Pause";
+}
+
+function updateTimerDisplay() {
+  const m = Math.floor(timerSeconds / 60);
+  const s = timerSeconds % 60;
+  const display = document.getElementById("timerDisplay");
+  display.textContent = `${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;
+
+  // Warning when under 5 minutes
+  if (timerSeconds <= 300 && timerSeconds > 0) {
+    display.classList.add("warning");
+  } else if (timerSeconds > 300) {
+    display.classList.remove("warning");
+  }
+}
+
+/* ================= PROGRESS TRACKER ================= */
+let progressChartInstance = null;
+
+function getHistory() {
+  try {
+    return JSON.parse(localStorage.getItem("mediation_history") || "[]");
+  } catch { return []; }
+}
+
+function saveToHistory(entry) {
+  const history = getHistory();
+  history.push({
+    date: new Date().toISOString(),
+    topic: entry.topic || "—",
+    content: entry.content,
+    language: entry.language,
+    total: entry.total
+  });
+  localStorage.setItem("mediation_history", JSON.stringify(history));
+}
+
+function deleteHistoryEntry(index) {
+  const history = getHistory();
+  history.splice(index, 1);
+  localStorage.setItem("mediation_history", JSON.stringify(history));
+  renderProgress();
+}
+
+function clearHistory() {
+  if (!confirm("Gesamten Fortschritt löschen?")) return;
+  localStorage.removeItem("mediation_history");
+  renderProgress();
+}
+
+function renderProgress() {
+  const history = getHistory();
+  const empty = document.getElementById("progressEmpty");
+  const content = document.getElementById("progressContent");
+  const clearBtn = document.getElementById("clearHistoryBtn");
+
+  if (!history.length) {
+    empty.style.display = "block";
+    content.style.display = "none";
+    clearBtn.style.display = "none";
+    return;
+  }
+
+  empty.style.display = "none";
+  content.style.display = "block";
+  clearBtn.style.display = "inline-flex";
+
+  // Stats
+  const totals = history.map(h => h.total).filter(t => t != null);
+  document.getElementById("statAttempts").textContent = history.length;
+  document.getElementById("statAverage").textContent = totals.length
+    ? (totals.reduce((a,b) => a+b, 0) / totals.length).toFixed(1)
+    : "–";
+  document.getElementById("statBest").textContent = totals.length
+    ? Math.max(...totals)
+    : "–";
+
+  // Table
+  const tbody = document.getElementById("historyTableBody");
+  tbody.innerHTML = history.slice().reverse().map((h, i) => {
+    const realIdx = history.length - 1 - i;
+    const d = new Date(h.date);
+    const dateStr = `${d.getDate()}.${d.getMonth()+1}.${d.getFullYear()}`;
+    const timeStr = `${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;
+    return `<tr>
+      <td>${dateStr}<br><span style="font-size:.75rem;color:var(--ink-muted)">${timeStr}</span></td>
+      <td style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(h.topic)}</td>
+      <td class="history-score">${h.content ?? "–"}/4</td>
+      <td class="history-score">${h.language ?? "–"}/6</td>
+      <td class="history-score" style="font-size:1.05rem;">${h.total ?? "–"}/10</td>
+      <td><button class="history-delete" onclick="deleteHistoryEntry(${realIdx})" title="Löschen">✕</button></td>
+    </tr>`;
+  }).join("");
+
+  // Chart
+  renderProgressChart();
+}
+
+function renderProgressChart() {
+  const history = getHistory();
+  if (!history.length) return;
+
+  const ctx = document.getElementById("progressChart");
+  if (!ctx) return;
+
+  // Destroy old chart
+  if (progressChartInstance) {
+    progressChartInstance.destroy();
+    progressChartInstance = null;
+  }
+
+  const isDark = document.documentElement.getAttribute("data-theme") === "dark";
+  const gridColor = isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)";
+  const textColor = isDark ? "#b0b0c8" : "#8888a4";
+
+  const labels = history.map((h, i) => `#${i + 1}`);
+  const totals = history.map(h => h.total);
+  const contents = history.map(h => h.content);
+  const langs = history.map(h => h.language);
+
+  progressChartInstance = new Chart(ctx, {
+    type: "line",
+    data: {
+      labels,
+      datasets: [
+        {
+          label: "Gesamt (/10)",
+          data: totals,
+          borderColor: "#2563eb",
+          backgroundColor: "rgba(37,99,235,0.1)",
+          fill: true,
+          tension: 0.3,
+          borderWidth: 2.5,
+          pointRadius: 4,
+          pointBackgroundColor: "#2563eb"
+        },
+        {
+          label: "Inhalt (/4)",
+          data: contents,
+          borderColor: "#059669",
+          backgroundColor: "transparent",
+          tension: 0.3,
+          borderWidth: 1.5,
+          borderDash: [4, 3],
+          pointRadius: 3,
+          pointBackgroundColor: "#059669"
+        },
+        {
+          label: "Sprache (/6)",
+          data: langs,
+          borderColor: "#f59e0b",
+          backgroundColor: "transparent",
+          tension: 0.3,
+          borderWidth: 1.5,
+          borderDash: [4, 3],
+          pointRadius: 3,
+          pointBackgroundColor: "#f59e0b"
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          labels: { color: textColor, font: { size: 11 } }
+        }
+      },
+      scales: {
+        y: {
+          min: 0, max: 10,
+          grid: { color: gridColor },
+          ticks: { color: textColor, stepSize: 2 }
+        },
+        x: {
+          grid: { display: false },
+          ticks: { color: textColor }
+        }
+      }
+    }
+  });
+}
+
+/* ================= INIT UPDATES ================= */
+// Update the original onload to include new features
+const _originalOnload = window.onload;
+window.onload = function() {
+  _originalOnload?.();
+  initTheme();
+};
 </script>
 
 </body>
