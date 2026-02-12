@@ -1164,20 +1164,20 @@ const ACCESS_PASSWORD = "stanna2026";
 const GENERATION_PROMPT_TEMPLATE = `Du bist ein Experte für das bayerische Abitur im Fach Englisch. Erstelle eine Mediation-Prüfungsaufgabe.
 
 THEMA: {topic}
-MINDESTLÄNGE QUELLTEXT: {length} Wörter
+STRIKTE ZIELLÄNGE QUELLTEXT: exakt ca. {length} Wörter
 
 TEIL 1 – DEUTSCHER QUELLTEXT:
 
 Rolle: Du schreibst als Redakteur einer großen deutschen Wochenzeitung (DIE ZEIT, FAZ, Spiegel). 
 
 WICHTIGE STILREGELN:
+- LÄNGE IST ENTSCHEIDEND: Der Text MUSS ungefähr {length} Wörter haben. Toleranz: maximal ±10%. Ein Text mit Vorgabe 400 darf also 360–440 Wörter haben, NICHT 600 oder mehr. Wenn du merkst, dass der Text zu lang wird, beende ihn. Qualität vor Quantität.
 - Der Text muss wie ein echter, durchgehender Zeitungsartikel wirken – ein einziger Fließtext ohne Zwischenüberschriften, ohne Nummerierungen, ohne Aufzählungen.
 - Verwende Absätze (Leerzeilen zwischen Absätzen), aber KEINE Zwischenüberschriften oder Abschnittstitel.
 - Beginne mit einem konkreten, lebendigen Einstieg (Szene, Anekdote oder aktuelles Ereignis), der den Leser sofort ins Thema zieht.
 - Entwickle den Text organisch weiter: von der konkreten Beobachtung zur Analyse, von Expertenstimmen zu gesellschaftlichen Implikationen, und schließe mit einem offenen, nachdenklichen Ende.
 - Baue mindestens zwei fiktive Expertenzitate ein (z.B. "Wie die Soziologin Maria Berger betont: ...").
 - Schreibstil: intellektuell anspruchsvoll, metaphorisch, komplexe Satzgefüge (Hypotaxen), gehobenes Vokabular. Keine einfachen Hauptsätze aneinanderreihen.
-- Der Text muss MINDESTENS {length} Wörter lang sein.
 
 TEIL 2 – ENGLISCHE AUFGABENSTELLUNG (Mediation Task):
 

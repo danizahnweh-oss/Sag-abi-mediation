@@ -111,13 +111,19 @@ async function handleGenerate(request, env) {
     .replace(/\{length\}/g, String(source_len_words || 600))
     .replace(/\$\{length\}/g, String(source_len_words || 600));
 
+  // Dynamic token limit: ~1.5 tokens per German word + buffer for JSON + task text
+  // This physically prevents the model from generating excessively long texts
+  const wordTarget = source_len_words || 600;
+  const estimatedTokens = Math.round(wordTarget * 1.8) + 500; // article tokens + task + JSON overhead
+  const maxTokens = Math.min(Math.max(estimatedTokens, 1500), 6000); // clamp between 1500-6000
+
   const openaiRes = await callOpenAI(env, [
     {
       role: "system",
       content: "You are an Abitur exam generator. Return valid JSON only. No markdown fences."
     },
     { role: "user", content: prompt }
-  ]);
+  ], maxTokens);
 
   const content = extractJSON(openaiRes);
   return jsonResponse(content);
@@ -307,7 +313,7 @@ Rules:
 }
 
 /* ================= OPENAI CALL ================= */
-async function callOpenAI(env, messages) {
+async function callOpenAI(env, messages, maxTokens = 4000) {
   const response = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
     headers: {
@@ -318,7 +324,7 @@ async function callOpenAI(env, messages) {
       model: "gpt-5.2",
       messages,
       temperature: 0.7,
-      max_completion_tokens: 4000
+      max_completion_tokens: maxTokens
     })
   });
 
