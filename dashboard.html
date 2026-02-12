@@ -400,7 +400,7 @@ footer a { color: var(--accent); text-decoration: none; }
       </div>
       <div class="stat-card">
         <div class="stat-value" id="statAverage">–</div>
-        <div class="stat-label">Ø Gesamt (/ 10)</div>
+        <div class="stat-label">Ø Gesamt (/ 15)</div>
       </div>
       <div class="stat-card">
         <div class="stat-value" id="statBest">–</div>
@@ -643,9 +643,9 @@ function renderTable() {
       <td><strong>${esc(r.student_name)}</strong></td>
       <td><span style="font-size:.8rem;background:var(--accent-soft);color:var(--accent);padding:.15rem .5rem;border-radius:4px;font-weight:700;">${esc(r.course || "–")}</span></td>
       <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(r.topic || "—")}</td>
-      <td class="score-cell">${r.content ?? "–"}/4</td>
-      <td class="score-cell">${r.language ?? "–"}/6</td>
-      <td class="score-cell" style="font-size:1.05rem;">${r.total ?? "–"}/10</td>
+      <td class="score-cell">${r.content ?? "–"}/15</td>
+      <td class="score-cell">${r.language ?? "–"}/15</td>
+      <td class="score-cell" style="font-size:1.05rem;">${r.total ?? "–"}/15</td>
       <td><button class="delete-btn" onclick="deleteResult('${r.id}')" title="Löschen">✕</button></td>
     </tr>`;
   }).join("");
@@ -730,7 +730,7 @@ function renderChart() {
       },
       scales: {
         y: {
-          min: 0, max: 10,
+          min: 0, max: 15,
           grid: { color: gridColor },
           ticks: { color: textColor, stepSize: 2 },
           title: { display: true, text: "Punkte", color: textColor }

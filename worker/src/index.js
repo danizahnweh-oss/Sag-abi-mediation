@@ -150,15 +150,17 @@ async function handleGrade(request, env) {
   const messages = [
     {
       role: "system",
-      content: `You are a strict German Abitur English teacher. 
-You must grade the student's mediation and return your evaluation in the following JSON format ONLY (no markdown, no extra text):
+      content: `You are a strict German Abitur English teacher grading a Sprachmittlung (mediation).
+You must grade using the official ISB Bewertungsraster with Notenpunkte (0-15 NP).
+Return your evaluation in the following JSON format ONLY (no markdown, no extra text):
 {
-  "content_textstructure": <number 0-4>,
-  "language": <number 0-6>,
-  "total": <number 0-10>,
-  "feedback": "<detailed feedback in German with Markdown formatting>",
-  "corrections": "<specific corrections and error list in German with Markdown formatting>"
+  "inhalt_np": <number 0-15>,
+  "sprache_np": <number 0-15>,
+  "gesamt_np": <number 0-15>,
+  "feedback": "<detailed feedback in German with Markdown formatting, citing specific student text passages>"
 }
+CALCULATION: gesamt_np = round(inhalt_np * 0.4 + sprache_np * 0.6)
+SPERRKLAUSEL: If inhalt_np OR sprache_np is 0, gesamt_np must be at most 3.
 IMPORTANT: Return ONLY valid JSON. No markdown fences. No preamble.`
     },
     {
@@ -176,33 +178,44 @@ IMPORTANT: Return ONLY valid JSON. No markdown fences. No preamble.`
   // Try to parse structured JSON from response
   try {
     const parsed = extractJSON(openaiRes);
+
+    const inhalt = parsed.inhalt_np ?? parsed.content_textstructure ?? null;
+    const sprache = parsed.sprache_np ?? parsed.language ?? null;
+    let gesamt = parsed.gesamt_np ?? null;
+
+    // Calculate if not provided
+    if (gesamt == null && inhalt != null && sprache != null) {
+      gesamt = Math.round(inhalt * 0.4 + sprache * 0.6);
+      // Apply Sperrklausel
+      if (inhalt === 0 || sprache === 0) gesamt = Math.min(gesamt, 3);
+    }
+
     return jsonResponse({
       scores: {
-        content_textstructure: parsed.content_textstructure ?? null,
-        language: parsed.language ?? null,
-        total: parsed.total ?? (
-          (parsed.content_textstructure != null && parsed.language != null)
-            ? parsed.content_textstructure + parsed.language
-            : null
-        )
+        content_textstructure: inhalt,
+        language: sprache,
+        total: gesamt
       },
       feedback: parsed.feedback || "",
       corrections: parsed.corrections || ""
     });
   } catch {
     // Fallback: try to extract scores with regex from unstructured text
-    const contentMatch = openaiRes.match(/Inhalt[^:]*:\s*(\d)\s*\/\s*4/i)
-      || openaiRes.match(/content[^:]*:\s*(\d)/i);
-    const langMatch = openaiRes.match(/Sprache[^:]*:\s*(\d)\s*\/\s*6/i)
-      || openaiRes.match(/language[^:]*:\s*(\d)/i);
-    const totalMatch = openaiRes.match(/Gesamt[^:]*:\s*(\d+)\s*\/\s*10/i)
-      || openaiRes.match(/total[^:]*:\s*(\d+)/i);
+    const contentMatch = openaiRes.match(/Inhalt[^:]*:\s*(\d{1,2})\s*(?:\/\s*15|\s*NP)/i)
+      || openaiRes.match(/inhalt_np["\s:]*(\d{1,2})/i);
+    const langMatch = openaiRes.match(/Sprache[^:]*:\s*(\d{1,2})\s*(?:\/\s*15|\s*NP)/i)
+      || openaiRes.match(/sprache_np["\s:]*(\d{1,2})/i);
+    const totalMatch = openaiRes.match(/Gesamt[^:]*:\s*(\d{1,2})\s*(?:\/\s*15|\s*NP)/i)
+      || openaiRes.match(/gesamt_np["\s:]*(\d{1,2})/i);
 
-    const contentScore = contentMatch ? parseInt(contentMatch[1]) : null;
-    const langScore = langMatch ? parseInt(langMatch[1]) : null;
-    const totalScore = totalMatch
-      ? parseInt(totalMatch[1])
-      : (contentScore != null && langScore != null ? contentScore + langScore : null);
+    const contentScore = contentMatch ? Math.min(parseInt(contentMatch[1]), 15) : null;
+    const langScore = langMatch ? Math.min(parseInt(langMatch[1]), 15) : null;
+    let totalScore = totalMatch ? Math.min(parseInt(totalMatch[1]), 15) : null;
+
+    if (totalScore == null && contentScore != null && langScore != null) {
+      totalScore = Math.round(contentScore * 0.4 + langScore * 0.6);
+      if (contentScore === 0 || langScore === 0) totalScore = Math.min(totalScore, 3);
+    }
 
     return jsonResponse({
       scores: {

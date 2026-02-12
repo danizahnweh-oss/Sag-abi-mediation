@@ -1081,19 +1081,24 @@ footer {
         <!-- Scores Grid -->
         <div class="scores-grid" id="scoresGrid">
           <div class="score-card">
-            <div class="score-label">Inhalt & Struktur</div>
+            <div class="score-label">Inhalt & Struktur (40%)</div>
             <div class="score-value" id="scoreContent">–</div>
-            <div class="score-max">von 4 BE</div>
+            <div class="score-max">von 15 NP</div>
           </div>
           <div class="score-card">
-            <div class="score-label">Sprache</div>
+            <div class="score-label">Sprache (60%)</div>
             <div class="score-value" id="scoreLang">–</div>
-            <div class="score-max">von 6 BE</div>
+            <div class="score-max">von 15 NP</div>
           </div>
           <div class="score-card total">
             <div class="score-label">Gesamt</div>
             <div class="score-value" id="scoreTotal">–</div>
-            <div class="score-max">von 10 BE</div>
+            <div class="score-max">von 15 NP</div>
+          </div>
+          <div class="score-card" style="background:var(--accent-glow);border-color:var(--accent);">
+            <div class="score-label">Schulnote</div>
+            <div class="score-value" id="scoreGrade" style="font-size:1.8rem;">–</div>
+            <div class="score-max" id="scoreGradeLabel"></div>
           </div>
         </div>
 
@@ -1161,12 +1166,12 @@ footer {
             <div class="score-card">
               <div class="score-label">Durchschnitt</div>
               <div class="score-value" id="statAverage">–</div>
-              <div class="score-max">von 10 BE</div>
+              <div class="score-max">von 15 NP</div>
             </div>
             <div class="score-card total">
               <div class="score-label">Bestes Ergebnis</div>
               <div class="score-value" id="statBest">–</div>
-              <div class="score-max">von 10 BE</div>
+              <div class="score-max">von 15 NP</div>
             </div>
           </div>
 
@@ -1245,43 +1250,114 @@ Antworte NUR mit reinem JSON in folgendem Format:
   "task_instruction": "Die kompakte englische Aufgabenstellung in 3-5 Sätzen..."
 }`;
 
-const CORRECTION_RUBRIC_PROMPT = `Rolle: Du bist ein erfahrener und strenger Englischlehrer an einem bayerischen Gymnasium.
+const CORRECTION_RUBRIC_PROMPT = `Rolle: Du bist ein erfahrener und strenger Englischlehrer an einem bayerischen Gymnasium. Du bewertest eine Sprachmittlung (Mediation) nach dem offiziellen ISB-Bewertungsraster für die Profil- und Leistungsstufe / Abiturprüfung (Stand: Juni 2024).
 
-Bewertungslogik:
-Inhalt und Textstruktur (max. 4 BE)
-Sprache (max. 6 BE)
+BEWERTUNGSSYSTEM:
+- Inhalt und Textstruktur: 0–15 Notenpunkte (Gewichtung 40%)
+- Sprache: 0–15 Notenpunkte (Gewichtung 60%)
+- Gesamtnote: gewichteter Durchschnitt, gerundet auf ganze Notenpunkte (0–15 NP)
 
-1. Inhalt und Textstruktur (0-4 BE)
-4 BE: Aufgabenstellung umfassend, vollständig und korrekt erfüllt. Klar strukturiert, redundanzfrei. Kommunikationssituation durchgehend überzeugend. Geschickte Umschreibungsstrategien.
-3 BE: Wesentliche Informationen meist strukturiert und korrekt. Kommunikationssituation meist überzeugend. In der Regel gelungene Umschreibungsstrategien.
-2 BE: Nur teilweise strukturiert, nicht immer vollständig/korrekt. Adressatenbezug nur zum Teil umgesetzt. Umschreibungsstrategien nur stellenweise gelungen.
-1 BE: Weitgehend unvollständig, wenig strukturiert oder fehlerhaft. Kommunikationssituation kaum beachtet.
-0 BE: Aufgabenstellung nicht erfüllt, gravierende Lücken, falsche Textsorte.
+SPERRKLAUSEL: Eine ungenügende sprachliche ODER inhaltliche Leistung (0 NP) schließt eine Gesamtnote von mehr als 3 Notenpunkten aus.
 
-2. Sprache (0-6 BE)
-6 BE: Nahezu fehlerfrei. Breites Repertoire an Grammatik, Wortschatz, Syntax und Idiomatik.
-5 BE: Meist fehlerfrei. Gefestigtes Repertoire, meist abwechslungsreich und treffend.
-4 BE: Mehrere, zumeist leichte Verstöße; Verständlichkeit kaum beeinträchtigt.
-3 BE: Mehrere, teils gravierende Verstöße; Verständlichkeit insgesamt noch gewährleistet.
-2 BE: Viele gravierende Verstöße; Verständlichkeit stellenweise deutlich beeinträchtigt.
-1 BE: Sehr viele gravierende Fehler; Verständlichkeit insgesamt beeinträchtigt.
-0 BE: Text unverständlich.
+=== INHALT UND TEXTSTRUKTUR (40%) ===
 
-WICHTIG – FORMAT DES FEEDBACKS:
+15–13 NP (Note 1):
+- Aufgabenstellung vollumfänglich erfüllt, Textart sowie Situations- und Adressatenbezug durchgehend überzeugend umgesetzt
+- durchgängig kohärente, klar strukturierte und sehr überzeugende Darstellung aller relevanten Informationen, ggf. durchgängig relevante und verständliche kulturspezifische Erläuterungen
+- geschickte Anwendung geeigneter Umschreibungsstrategien
+
+12–10 NP (Note 2):
+- Aufgabenstellung nahezu vollständig erfüllt, Textart sowie Situations- und Adressatenbezug meist überzeugend umgesetzt
+- überwiegend kohärente, strukturierte und überzeugende Darstellung, ggf. meist relevante und verständliche kulturspezifische Erläuterungen; vereinzelte inhaltliche Lücken fallen nicht ins Gewicht
+- meist geschickte Anwendung geeigneter Umschreibungsstrategien
+
+09–07 NP (Note 3):
+- Aufgabenstellung im Großen und Ganzen erfüllt, Textart sowie Situations- und Adressatenbezug in weiten Teilen überzeugend umgesetzt
+- in der Regel kohärente, strukturierte und nachvollziehbare Darstellung, ggf. in weiten Teilen relevante und verständliche kulturspezifische Erläuterungen; einzelne inhaltliche Lücken sind vorhanden
+- im Allgemeinen geschickte Anwendung geeigneter Umschreibungsstrategien
+
+06–04 NP (Note 4):
+- Aufgabenstellung insgesamt noch erfüllt, Textart sowie Situations- und Adressatenbezug mit Abstrichen insgesamt noch sachgerecht umgesetzt
+- ansatzweise kohärente, strukturierte und noch nachvollziehbare Darstellung, ggf. insgesamt noch relevante und verständliche kulturspezifische Erläuterungen; mehrere inhaltliche Lücken sind vorhanden
+- eingeschränkte oder nicht immer passende Anwendung von Umschreibungsstrategien
+
+03–01 NP (Note 5):
+- Aufgabenstellung kaum mehr erfüllt, Textart sowie Situations- und Adressatenbezug kaum noch sachgerecht umgesetzt
+- weitgehend inkohärente, unstrukturierte und wiederholt nicht nachvollziehbare und lückenhafte Darstellung, ggf. kaum noch relevante und verständliche kulturspezifische Erläuterungen; größere inhaltliche Lücken sind vorhanden
+- deutlich eingeschränkte oder häufig nicht passende Anwendung von Umschreibungsstrategien
+
+00 NP (Note 6):
+- Aufgabenstellung nicht erfüllt, Textart sowie Situations- und Adressatenbezug nicht umgesetzt
+- inkohärente, unstrukturierte und nicht nachvollziehbare Darstellung, kaum wesentliche Informationen
+- keine Umschreibungsstrategien
+
+=== SPRACHE (60%) ===
+
+15–13 NP (Note 1):
+- lexikalisch, grammatisch/syntaktisch und orthographisch in hohem Maß korrekt
+- durchgehend eigenständige Formulierungen
+- besonders präzise, differenzierte und idiomatische Wortwahl
+- durchgängig variabler und funktionaler Satzbau unter angemessener Verwendung komplexer Strukturen
+- durchgängig sichere und abwechslungsreiche Verwendung eines breiten Spektrums textstrukturierender Mittel
+
+12–10 NP (Note 2):
+- lexikalisch, grammatisch/syntaktisch und orthographisch überwiegend korrekt, keine Beeinträchtigung der Verständlichkeit
+- meist eigenständige Formulierungen
+- präzise, meist differenzierte und idiomatische Wortwahl
+- meist variabler und funktionaler Satzbau unter überwiegend angemessener Verwendung komplexer Strukturen
+- meist sichere und abwechslungsreiche Verwendung eines breiten Spektrums textstrukturierender Mittel
+
+09–07 NP (Note 3):
+- im Wesentlichen lexikalisch, grammatisch/syntaktisch und orthographisch korrekt, Verständlichkeit geringfügig eingeschränkt
+- teilweise eigenständige Formulierungen
+- treffende, im Allgemeinen differenzierte Wortwahl
+- teilweise variabler und funktionaler Satzbau, im Großen und Ganzen angemessene Verwendung komplexer Strukturen
+- im Allgemeinen sichere, aber wenig abwechslungsreiche Verwendung textstrukturierender Mittel
+
+06–04 NP (Note 4):
+- lexikalische, grammatische/syntaktische und orthographische Verstöße gegen die Sprachrichtigkeit, die Verständlichkeit ist stellenweise beeinträchtigt
+- noch eigenständige Anteile in den Formulierungen
+- noch angemessene Wortwahl, eingeschränkter Wortschatz
+- wenig variabler, aber für die Darstellung noch angemessener Satzbau, seltene oder fehlerhafte Verwendung komplexer Strukturen
+- wenig abwechslungsreiche Verwendung textstrukturierender Mittel
+
+03–01 NP (Note 5):
+- Häufung lexikalischer, grammatischer/syntaktischer und orthographischer Verstöße, die Verständlichkeit ist insgesamt stark beeinträchtigt
+- kaum eigenständige Formulierungen
+- deutlich eingeschränkter Wortschatz
+- sehr einfacher, teilweise sprachuntypischer Satzbau
+- kaum textstrukturierende Mittel
+
+00 NP (Note 6):
+- Häufung elementarer Verstöße, die Verständlichkeit ist nicht mehr gegeben
+- keine eigenständigen Formulierungen
+- keine angemessene Wortwahl, erhebliche Wortschatzlücken
+- nur einfachste Satzmuster bzw. sprachuntypischer Satzbau
+- keine textstrukturierenden Mittel
+
+=== GESAMTNOTE BERECHNEN ===
+Gesamtnotenpunkte = runde(Inhalt_NP × 0.4 + Sprache_NP × 0.6)
+Beachte die Sperrklausel: Wenn Inhalt ODER Sprache = 0 NP → Gesamt maximal 3 NP.
+
+=== FORMAT DES FEEDBACKS ===
 
 Dein Feedback MUSS konkrete Textstellen des Schülers zitieren. Arbeite wie folgt:
 
-### Inhalt & Struktur
-Erkläre, welche inhaltlichen Aspekte der Aufgabe gut umgesetzt wurden und welche fehlen oder unzureichend sind. Zitiere dabei konkrete Passagen aus dem Schülertext (in Anführungszeichen), um dein Urteil zu belegen. Beispiel: "Dein Satz 'The increasing use of social media has led to...' greift den Aspekt der gesellschaftlichen Auswirkungen gut auf."
+### Inhalt & Textstruktur ({inhalt_np}/15 NP)
+Erkläre, welche inhaltlichen Aspekte der Aufgabe gut umgesetzt wurden und welche fehlen oder unzureichend sind. Zitiere dabei konkrete Passagen aus dem Schülertext (in Anführungszeichen), um dein Urteil zu belegen. Gehe auf Textart, Situations- und Adressatenbezug, Kohärenz und Umschreibungsstrategien ein.
 
-### Sprache
+### Sprache ({sprache_np}/15 NP)
 Liste die wichtigsten Sprachfehler auf, indem du die fehlerhafte Stelle zitierst und die korrekte Version daneben stellst. Verwende das Format:
 - "has went" → "has gone" (Partizipform)
 - "informations" → "information" (unzählbar)
-Ordne die Fehler nach Schwere: zuerst gravierende Grammatikfehler, dann Wortschatzfehler, dann Stilfehler.
+Gehe auf folgende Kriterien ein: Korrektheit (Lexik, Grammatik, Orthographie), Eigenständigkeit der Formulierungen, Wortwahl, Satzbau und textstrukturierende Mittel.
 
 ### Positive Aspekte
 Hebe 2–3 besonders gelungene Formulierungen oder Strategien hervor (mit Zitat).
+
+### Gesamtbewertung
+Fasse zusammen: Inhalt {inhalt_np}/15 NP (40%) + Sprache {sprache_np}/15 NP (60%) = Gesamt {gesamt_np}/15 NP.
+Gib auch die entsprechende Schulnote an (z.B. "Note 2+" für 12 NP).
 
 Schreibe das gesamte Feedback auf DEUTSCH, aber zitiere den Schülertext natürlich auf Englisch.`;
 
@@ -1637,6 +1713,13 @@ async function submitForCorrection() {
     document.getElementById("scoreLang").textContent = ls != null ? ls : "–";
     document.getElementById("scoreTotal").textContent = ts != null ? ts : "–";
 
+    // Calculate and display school grade
+    if (ts != null) {
+      const grade = npToGrade(ts);
+      document.getElementById("scoreGrade").textContent = grade.note;
+      document.getElementById("scoreGradeLabel").textContent = grade.label;
+    }
+
     // Save to history (local)
     saveToHistory({
       topic: CONFIG.storedData.headline || document.getElementById("topicSelect")?.value || "—",
@@ -1868,6 +1951,25 @@ function countWords(s) {
   return (s || "").trim().split(/\s+/).filter(a => a).length;
 }
 
+function npToGrade(np) {
+  if (np >= 15) return { note: "1+", label: "sehr gut" };
+  if (np >= 14) return { note: "1", label: "sehr gut" };
+  if (np >= 13) return { note: "1–", label: "sehr gut" };
+  if (np >= 12) return { note: "2+", label: "gut" };
+  if (np >= 11) return { note: "2", label: "gut" };
+  if (np >= 10) return { note: "2–", label: "gut" };
+  if (np >= 9)  return { note: "3+", label: "befriedigend" };
+  if (np >= 8)  return { note: "3", label: "befriedigend" };
+  if (np >= 7)  return { note: "3–", label: "befriedigend" };
+  if (np >= 6)  return { note: "4+", label: "ausreichend" };
+  if (np >= 5)  return { note: "4", label: "ausreichend" };
+  if (np >= 4)  return { note: "4–", label: "ausreichend" };
+  if (np >= 3)  return { note: "5+", label: "mangelhaft" };
+  if (np >= 2)  return { note: "5", label: "mangelhaft" };
+  if (np >= 1)  return { note: "5–", label: "mangelhaft" };
+  return { note: "6", label: "ungenügend" };
+}
+
 function nav(id) {
   document.querySelectorAll("section").forEach(s => s.classList.remove("active"));
   document.querySelectorAll("nav button").forEach(b => b.classList.remove("active"));
@@ -2077,9 +2179,9 @@ function renderProgress() {
     return `<tr>
       <td>${dateStr}<br><span style="font-size:.75rem;color:var(--ink-muted)">${timeStr}</span></td>
       <td style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(h.topic)}</td>
-      <td class="history-score">${h.content ?? "–"}/4</td>
-      <td class="history-score">${h.language ?? "–"}/6</td>
-      <td class="history-score" style="font-size:1.05rem;">${h.total ?? "–"}/10</td>
+      <td class="history-score">${h.content ?? "–"}/15</td>
+      <td class="history-score">${h.language ?? "–"}/15</td>
+      <td class="history-score" style="font-size:1.05rem;">${h.total ?? "–"}/15</td>
       <td><button class="history-delete" onclick="deleteHistoryEntry(${realIdx})" title="Löschen">✕</button></td>
     </tr>`;
   }).join("");
@@ -2116,7 +2218,7 @@ function renderProgressChart() {
       labels,
       datasets: [
         {
-          label: "Gesamt (/10)",
+          label: "Gesamt (/15 NP)",
           data: totals,
           borderColor: "#2563eb",
           backgroundColor: "rgba(37,99,235,0.1)",
@@ -2127,7 +2229,7 @@ function renderProgressChart() {
           pointBackgroundColor: "#2563eb"
         },
         {
-          label: "Inhalt (/4)",
+          label: "Inhalt (/15 NP)",
           data: contents,
           borderColor: "#059669",
           backgroundColor: "transparent",
@@ -2138,7 +2240,7 @@ function renderProgressChart() {
           pointBackgroundColor: "#059669"
         },
         {
-          label: "Sprache (/6)",
+          label: "Sprache (/15 NP)",
           data: langs,
           borderColor: "#f59e0b",
           backgroundColor: "transparent",
@@ -2160,9 +2262,9 @@ function renderProgressChart() {
       },
       scales: {
         y: {
-          min: 0, max: 10,
+          min: 0, max: 15,
           grid: { color: gridColor },
-          ticks: { color: textColor, stepSize: 2 }
+          ticks: { color: textColor, stepSize: 3 }
         },
         x: {
           grid: { display: false },
