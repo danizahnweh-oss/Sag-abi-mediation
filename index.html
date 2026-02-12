@@ -773,6 +773,12 @@ footer {
     <h2>Mediation Trainer</h2>
     <p>Abitur Englisch – Niveau B2</p>
 
+    <input type="text" id="studentName"
+           class="login-input"
+           placeholder="Dein Name …"
+           autocomplete="off"
+           style="margin-bottom:.5rem;">
+
     <input type="password" id="accessPassword"
            class="login-input"
            placeholder="Passwort eingeben …"
@@ -791,6 +797,7 @@ footer {
   <header>
     <h1>Mediation <span>Trainer</span></h1>
     <div style="display:flex;align-items:center;gap:.8rem;">
+      <span id="studentGreeting" style="display:none;font-size:.85rem;color:var(--ink-muted);font-weight:500;"></span>
       <div class="header-meta">Created by DZ · St. Anna</div>
       <button class="theme-toggle" onclick="toggleDarkMode()" title="Dark Mode umschalten" id="themeToggleBtn">🌙</button>
     </div>
@@ -1076,8 +1083,23 @@ footer {
           <div class="feedback-body" id="feedbackBody"></div>
         </div>
 
+        <!-- Musterlösung -->
+        <div class="card" id="modelAnswerCard" style="display:none;">
+          <h2 class="card-header">Musterlösung</h2>
+          <div class="feedback-body" id="modelAnswerBody"></div>
+        </div>
+
+        <!-- Disclaimer -->
+        <div style="background:var(--accent-glow);border:1px solid var(--border);border-radius:var(--radius-sm);padding:.8rem 1.2rem;margin-top:1rem;font-size:.82rem;color:var(--ink-muted);line-height:1.5;">
+          ⚠️ <strong>Hinweis:</strong> Diese Bewertung wurde von einer KI erstellt und dient als Orientierung für dein Lernen. Sie ersetzt keine offizielle Lehrerkorrektur. Besprich deine Ergebnisse im Zweifelsfall mit deiner Lehrkraft.
+        </div>
+
         <!-- Actions -->
         <div class="pdf-actions">
+          <button class="btn btn-secondary btn-small" onclick="generateModelAnswer()" id="modelAnswerBtn">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            Musterlösung zeigen
+          </button>
           <button class="btn btn-secondary btn-small" onclick="exportPDF()">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
             Als PDF exportieren
@@ -1222,7 +1244,25 @@ Sprache (max. 6 BE)
 3 BE: Mehrere, teils gravierende Verstöße; Verständlichkeit insgesamt noch gewährleistet.
 2 BE: Viele gravierende Verstöße; Verständlichkeit stellenweise deutlich beeinträchtigt.
 1 BE: Sehr viele gravierende Fehler; Verständlichkeit insgesamt beeinträchtigt.
-0 BE: Text unverständlich.`;
+0 BE: Text unverständlich.
+
+WICHTIG – FORMAT DES FEEDBACKS:
+
+Dein Feedback MUSS konkrete Textstellen des Schülers zitieren. Arbeite wie folgt:
+
+### Inhalt & Struktur
+Erkläre, welche inhaltlichen Aspekte der Aufgabe gut umgesetzt wurden und welche fehlen oder unzureichend sind. Zitiere dabei konkrete Passagen aus dem Schülertext (in Anführungszeichen), um dein Urteil zu belegen. Beispiel: "Dein Satz 'The increasing use of social media has led to...' greift den Aspekt der gesellschaftlichen Auswirkungen gut auf."
+
+### Sprache
+Liste die wichtigsten Sprachfehler auf, indem du die fehlerhafte Stelle zitierst und die korrekte Version daneben stellst. Verwende das Format:
+- "has went" → "has gone" (Partizipform)
+- "informations" → "information" (unzählbar)
+Ordne die Fehler nach Schwere: zuerst gravierende Grammatikfehler, dann Wortschatzfehler, dann Stilfehler.
+
+### Positive Aspekte
+Hebe 2–3 besonders gelungene Formulierungen oder Strategien hervor (mit Zitat).
+
+Schreibe das gesamte Feedback auf DEUTSCH, aber zitiere den Schülertext natürlich auf Englisch.`;
 
 const CONFIG = { storedData: {} };
 
@@ -1246,37 +1286,105 @@ async function apiCall(endpoint, body) {
 /* ================= LOGIN ================= */
 function checkPassword() {
   const input = document.getElementById("accessPassword").value.trim();
+  const name = document.getElementById("studentName").value.trim();
   const err = document.getElementById("loginError");
   if (input === ACCESS_PASSWORD) {
+    if (!name) {
+      err.textContent = "Bitte gib deinen Namen ein.";
+      err.style.display = "block";
+      document.getElementById("studentName").focus();
+      return;
+    }
     sessionStorage.setItem("access", "1");
+    sessionStorage.setItem("student_name", name);
     document.getElementById("login-screen").style.display = "none";
     document.getElementById("app-wrapper").style.display = "flex";
     err.style.display = "none";
+    // Show name in header
+    document.getElementById("studentGreeting").textContent = name;
+    document.getElementById("studentGreeting").style.display = "inline";
   } else {
+    err.textContent = "Falsches Passwort – bitte nochmal versuchen.";
     err.style.display = "block";
     document.getElementById("accessPassword").value = "";
     document.getElementById("accessPassword").focus();
   }
 }
 
+/* ================= SESSION RECOVERY ================= */
+function saveSession() {
+  const session = {
+    examData: CONFIG.storedData,
+    studentText: document.getElementById("studentText").value,
+    currentStep: document.querySelector("section.active")?.id || "setup",
+    timerSeconds: timerSeconds,
+    timerRunning: !!timerInterval
+  };
+  localStorage.setItem("session_" + getStudentKey(), JSON.stringify(session));
+}
+
+function restoreSession() {
+  try {
+    const raw = localStorage.getItem("session_" + getStudentKey());
+    if (!raw) return false;
+    const session = JSON.parse(raw);
+
+    if (session.examData && session.examData.article_text) {
+      CONFIG.storedData = session.examData;
+      renderExam(session.examData);
+    }
+    if (session.studentText) {
+      document.getElementById("studentText").value = session.studentText;
+      updateWordCount();
+    }
+    if (session.currentStep && session.currentStep !== "setup") {
+      nav(session.currentStep);
+    }
+    return true;
+  } catch { return false; }
+}
+
+function getStudentKey() {
+  const name = sessionStorage.getItem("student_name") || "default";
+  return name.toLowerCase().replace(/\s+/g, "_");
+}
+
 /* ================= INIT ================= */
 window.onload = function () {
+  initTheme();
+
+  // Restore login
   if (sessionStorage.getItem("access") === "1") {
     document.getElementById("login-screen").style.display = "none";
     document.getElementById("app-wrapper").style.display = "flex";
+    const name = sessionStorage.getItem("student_name") || "";
+    if (name) {
+      document.getElementById("studentGreeting").textContent = name;
+      document.getElementById("studentGreeting").style.display = "inline";
+    }
   }
-  const saved = localStorage.getItem("exam_data");
-  if (saved) {
-    try {
-      CONFIG.storedData = JSON.parse(saved);
-      renderExam(CONFIG.storedData);
-    } catch { /* ignore corrupt data */ }
+
+  // Restore session
+  if (sessionStorage.getItem("student_name")) {
+    restoreSession();
+  } else {
+    // Legacy: try old localStorage
+    const saved = localStorage.getItem("exam_data");
+    if (saved) {
+      try {
+        CONFIG.storedData = JSON.parse(saved);
+        renderExam(CONFIG.storedData);
+      } catch {}
+    }
+    const st = localStorage.getItem("student_text");
+    if (st) {
+      document.getElementById("studentText").value = st;
+      updateWordCount();
+    }
   }
-  const st = localStorage.getItem("student_text");
-  if (st) {
-    document.getElementById("studentText").value = st;
-    updateWordCount();
-  }
+
+  // Auto-save session every 15 seconds
+  setInterval(saveSession, 15000);
 };
 
 /* ================= GENERATE ================= */
@@ -1685,15 +1793,18 @@ function resetAll() {
   if (!confirm("Neue Aufgabe starten? Alle aktuellen Daten werden gelöscht.")) return;
   localStorage.removeItem("exam_data");
   localStorage.removeItem("student_text");
+  localStorage.removeItem("session_" + getStudentKey());
   CONFIG.storedData = {};
   document.getElementById("studentText").value = "";
   document.getElementById("feedbackContent").style.display = "none";
+  document.getElementById("modelAnswerCard").style.display = "none";
   document.getElementById("taskInstruction").innerText = "Bitte zuerst eine Prüfung generieren.";
   document.getElementById("articleTitle").innerText = "Quelltext";
   document.getElementById("articleBody").innerHTML = "";
   document.getElementById("wordCountLabel").innerText = "0";
   clearOCR();
   clearTaskUpload();
+  stopTimer();
   setSetupMode("generate");
   updateWordCount();
   nav("setup");
@@ -1724,6 +1835,44 @@ function escapeHtml(str) {
   return String(str).replace(/[&<>"']/g, m => ({
     "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;"
   }[m]));
+}
+
+/* ================= MUSTERLÖSUNG ================= */
+async function generateModelAnswer() {
+  const btn = document.getElementById("modelAnswerBtn");
+  const card = document.getElementById("modelAnswerCard");
+  const body = document.getElementById("modelAnswerBody");
+
+  if (card.style.display === "block") {
+    // Already visible – just scroll to it
+    card.scrollIntoView({ behavior: "smooth" });
+    return;
+  }
+
+  if (!CONFIG.storedData.article_text || !CONFIG.storedData.task_instruction) {
+    alert("Keine Aufgabe vorhanden.");
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = "⏳ Wird generiert …";
+
+  try {
+    const data = await apiCall("/api/model-answer", {
+      source_text_de: CONFIG.storedData.article_text,
+      task_en: CONFIG.storedData.task_instruction
+    });
+
+    body.innerHTML = marked.parse(data.model_answer || "Keine Musterlösung generiert.");
+    card.style.display = "block";
+    card.scrollIntoView({ behavior: "smooth" });
+  } catch (e) {
+    body.innerHTML = `<p style="color:var(--warning);">Fehler: ${escapeHtml(e.message)}</p>`;
+    card.style.display = "block";
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg> Musterlösung zeigen`;
 }
 
 /* ================= DARK MODE ================= */
@@ -1811,7 +1960,8 @@ let progressChartInstance = null;
 
 function getHistory() {
   try {
-    return JSON.parse(localStorage.getItem("mediation_history") || "[]");
+    const key = "mediation_history_" + getStudentKey();
+    return JSON.parse(localStorage.getItem(key) || "[]");
   } catch { return []; }
 }
 
@@ -1824,19 +1974,22 @@ function saveToHistory(entry) {
     language: entry.language,
     total: entry.total
   });
-  localStorage.setItem("mediation_history", JSON.stringify(history));
+  const key = "mediation_history_" + getStudentKey();
+  localStorage.setItem(key, JSON.stringify(history));
 }
 
 function deleteHistoryEntry(index) {
   const history = getHistory();
   history.splice(index, 1);
-  localStorage.setItem("mediation_history", JSON.stringify(history));
+  const key = "mediation_history_" + getStudentKey();
+  localStorage.setItem(key, JSON.stringify(history));
   renderProgress();
 }
 
 function clearHistory() {
   if (!confirm("Gesamten Fortschritt löschen?")) return;
-  localStorage.removeItem("mediation_history");
+  const key = "mediation_history_" + getStudentKey();
+  localStorage.removeItem(key);
   renderProgress();
 }
 
@@ -1974,12 +2127,7 @@ function renderProgressChart() {
 }
 
 /* ================= INIT UPDATES ================= */
-// Update the original onload to include new features
-const _originalOnload = window.onload;
-window.onload = function() {
-  _originalOnload?.();
-  initTheme();
-};
+// Theme and session recovery are now handled in the main window.onload above
 </script>
 
 </body>
