@@ -1,3 +1,6 @@
 name = "sag-abi-mediation-api"
 main = "src/index.js"
 compatibility_date = "2025-01-01"
+[[kv_namespaces]]
+binding = "RESULTS_KV"
+id = "HIER_DIE_ID_EINFÜGEN"

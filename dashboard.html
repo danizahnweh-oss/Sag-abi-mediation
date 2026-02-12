@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lehrer-Dashboard · Mediation Trainer</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎓</text></svg>">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+:root {
+  --ink: #1a1a2e;
+  --ink-light: #4a4a6a;
+  --ink-muted: #8888a4;
+  --accent: #2563eb;
+  --accent-hover: #1d4ed8;
+  --accent-soft: #dbeafe;
+  --accent-glow: rgba(37, 99, 235, 0.08);
+  --surface: #ffffff;
+  --bg: #f0f0f5;
+  --bg-warm: #fafafa;
+  --border: #e2e2ec;
+  --border-light: #f0f0f5;
+  --success: #059669;
+  --success-bg: #ecfdf5;
+  --warning: #dc2626;
+  --warning-bg: #fef2f2;
+  --radius: 12px;
+  --radius-sm: 8px;
+  --shadow-sm: 0 1px 3px rgba(26,26,46,0.06);
+  --shadow-md: 0 4px 16px rgba(26,26,46,0.08);
+  --shadow-lg: 0 8px 32px rgba(26,26,46,0.12);
+  --font-display: 'DM Serif Display', Georgia, serif;
+  --font-body: 'DM Sans', -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Courier New', monospace;
+}
+
+[data-theme="dark"] {
+  --ink: #e4e4ed;
+  --ink-light: #b0b0c8;
+  --ink-muted: #7878a0;
+  --accent: #60a5fa;
+  --accent-hover: #93bbfd;
+  --accent-soft: rgba(96, 165, 250, 0.15);
+  --accent-glow: rgba(96, 165, 250, 0.08);
+  --surface: #1e1e2e;
+  --bg: #14141f;
+  --bg-warm: #1a1a28;
+  --border: #2e2e42;
+  --border-light: #252538;
+  --success: #34d399;
+  --success-bg: rgba(52,211,153,0.1);
+  --warning: #f87171;
+  --warning-bg: rgba(248,113,113,0.1);
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.2);
+  --shadow-md: 0 4px 16px rgba(0,0,0,0.3);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,0.4);
+}
+
+*,*::before,*::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--font-body);
+  background: var(--bg);
+  color: var(--ink);
+  min-height: 100vh;
+  line-height: 1.6;
+}
+
+/* ====== LOGIN ====== */
+#login-screen {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+  padding: 1rem;
+}
+.login-box {
+  background: var(--surface);
+  padding: 2.5rem;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+  max-width: 380px;
+  width: 100%;
+  text-align: center;
+}
+.login-box h2 {
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  margin: .5rem 0;
+}
+.login-box p { color: var(--ink-muted); font-size: .9rem; }
+.login-input {
+  width: 100%;
+  padding: .75rem 1rem;
+  border: 2px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-body);
+  font-size: 1rem;
+  outline: none;
+  background: var(--bg-warm);
+  color: var(--ink);
+  margin-top: .8rem;
+  transition: border-color .2s;
+}
+.login-input:focus { border-color: var(--accent); }
+.login-error {
+  display: none;
+  margin-top: .8rem;
+  color: var(--warning);
+  font-size: .85rem;
+  font-weight: 600;
+}
+.school-badge {
+  display: inline-block;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 700;
+  font-size: .8rem;
+  padding: .3rem .8rem;
+  border-radius: 20px;
+  letter-spacing: .03em;
+  text-transform: uppercase;
+}
+
+/* ====== LAYOUT ====== */
+#app-wrapper { display: none; flex-direction: column; min-height: 100vh; }
+
+header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 1rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+header h1 {
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  font-weight: 400;
+}
+header h1 span { color: var(--accent); }
+
+main {
+  max-width: 1100px;
+  width: 100%;
+  margin: 1.5rem auto;
+  padding: 0 1.5rem;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  padding: .65rem 1.2rem;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-body);
+  font-size: .9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .15s;
+}
+.btn:hover { background: var(--accent-hover); }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+.btn-secondary { background: var(--border); color: var(--ink-light); }
+.btn-secondary:hover { background: var(--accent-soft); color: var(--accent); }
+.btn-danger { background: var(--warning); }
+.btn-danger:hover { background: #b91c1c; }
+.btn-small { padding: .45rem .8rem; font-size: .82rem; }
+
+.card {
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 1.8rem;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border);
+  margin-bottom: 1.2rem;
+}
+
+/* ====== STATS GRID ====== */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+.stat-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.2rem;
+  text-align: center;
+}
+.stat-value {
+  font-family: var(--font-mono);
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+.stat-label {
+  font-size: .78rem;
+  color: var(--ink-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  margin-top: .3rem;
+}
+
+/* ====== TABLE ====== */
+.results-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .88rem;
+}
+.results-table th {
+  text-align: left;
+  padding: .7rem .8rem;
+  font-size: .75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--ink-muted);
+  border-bottom: 2px solid var(--border);
+  cursor: pointer;
+  user-select: none;
+  transition: color .15s;
+}
+.results-table th:hover { color: var(--accent); }
+.results-table th.sorted { color: var(--accent); }
+.results-table th .sort-arrow { font-size: .7rem; margin-left: .3rem; }
+.results-table td {
+  padding: .6rem .8rem;
+  border-bottom: 1px solid var(--border-light);
+  color: var(--ink-light);
+}
+.results-table tr:hover td { background: var(--accent-glow); }
+.score-cell {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.delete-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--ink-muted);
+  font-size: .85rem;
+  padding: .2rem;
+  transition: color .15s;
+}
+.delete-btn:hover { color: var(--warning); }
+
+/* ====== CHART ====== */
+.chart-container {
+  height: 280px;
+  margin: 1rem 0;
+}
+.chart-container canvas { width: 100% !important; height: 100% !important; }
+
+/* ====== FILTER BAR ====== */
+.filter-bar {
+  display: flex;
+  gap: .8rem;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 1.2rem;
+}
+.filter-bar select, .filter-bar input {
+  padding: .5rem .8rem;
+  border: 2px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-body);
+  font-size: .88rem;
+  background: var(--surface);
+  color: var(--ink);
+  outline: none;
+}
+.filter-bar select:focus, .filter-bar input:focus { border-color: var(--accent); }
+
+/* ====== STUDENT CARDS ====== */
+.student-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1rem;
+  margin: 1.5rem 0;
+}
+.student-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.2rem;
+  transition: box-shadow .2s;
+}
+.student-card:hover { box-shadow: var(--shadow-md); }
+.student-name {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  margin-bottom: .5rem;
+}
+.student-stats {
+  display: flex;
+  gap: 1rem;
+  font-size: .82rem;
+  color: var(--ink-muted);
+}
+.student-stats strong {
+  color: var(--accent);
+  font-family: var(--font-mono);
+}
+
+.theme-toggle {
+  background: var(--border);
+  border: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  transition: all .2s;
+}
+.theme-toggle:hover { background: var(--accent-soft); }
+
+.empty-state {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: var(--ink-muted);
+}
+.empty-state .icon { font-size: 2.5rem; margin-bottom: .8rem; }
+
+footer {
+  text-align: center;
+  padding: 1.5rem;
+  color: var(--ink-muted);
+  font-size: .8rem;
+  margin-top: auto;
+}
+footer a { color: var(--accent); text-decoration: none; }
+
+@media (max-width: 640px) {
+  header { padding: .8rem 1rem; }
+  main { padding: 0 1rem; }
+  .card { padding: 1.2rem; }
+  .stats-grid { grid-template-columns: 1fr 1fr; }
+}
+</style>
+</head>
+
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="school-badge">Lehrer-Zugang</div>
+    <h2>Dashboard</h2>
+    <p>Mediation Trainer · St. Anna</p>
+
+    <input type="password" id="teacherPassword"
+           class="login-input"
+           placeholder="Lehrer-Passwort …"
+           autocomplete="off"
+           onkeyup="if(event.key==='Enter')loginTeacher()">
+
+    <br><br>
+    <button class="btn" style="width:100%" onclick="loginTeacher()">Anmelden</button>
+    <div id="loginError" class="login-error"></div>
+    <p style="margin-top:1rem;font-size:.8rem;"><a href="index.html">← Zurück zum Trainer</a></p>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app-wrapper">
+  <header>
+    <h1>Lehrer-<span>Dashboard</span></h1>
+    <div style="display:flex;align-items:center;gap:.8rem;">
+      <a href="index.html" style="font-size:.85rem;color:var(--accent);text-decoration:none;font-weight:600;">← Zum Trainer</a>
+      <button class="theme-toggle" onclick="toggleDark()" id="themeBtn">🌙</button>
+    </div>
+  </header>
+
+  <main>
+    <!-- Stats Overview -->
+    <div class="stats-grid" id="statsGrid">
+      <div class="stat-card">
+        <div class="stat-value" id="statStudents">0</div>
+        <div class="stat-label">Schüler</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="statAttempts">0</div>
+        <div class="stat-label">Versuche gesamt</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="statAverage">–</div>
+        <div class="stat-label">Ø Gesamt (/ 10)</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="statBest">–</div>
+        <div class="stat-label">Bestes Ergebnis</div>
+      </div>
+    </div>
+
+    <!-- Student Overview Cards -->
+    <div class="card">
+      <h2 style="font-family:var(--font-display);margin-bottom:1rem;">Schüler-Übersicht</h2>
+      <div id="studentGrid" class="student-grid"></div>
+      <div id="noStudents" class="empty-state" style="display:none;">
+        <div class="icon">📭</div>
+        <p>Noch keine Ergebnisse vorhanden.</p>
+      </div>
+    </div>
+
+    <!-- Chart -->
+    <div class="card">
+      <h2 style="font-family:var(--font-display);margin-bottom:.5rem;">Klassenentwicklung</h2>
+      <div class="chart-container">
+        <canvas id="classChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Results Table -->
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.8rem;margin-bottom:1rem;">
+        <h2 style="font-family:var(--font-display);">Alle Ergebnisse</h2>
+        <div style="display:flex;gap:.5rem;">
+          <button class="btn btn-small" onclick="loadResults()">🔄 Aktualisieren</button>
+          <button class="btn btn-small btn-secondary" onclick="exportCSV()">📊 CSV Export</button>
+        </div>
+      </div>
+
+      <div class="filter-bar">
+        <select id="filterStudent" onchange="renderTable()">
+          <option value="">Alle Schüler</option>
+        </select>
+        <select id="filterSort" onchange="renderTable()">
+          <option value="date-desc">Neueste zuerst</option>
+          <option value="date-asc">Älteste zuerst</option>
+          <option value="score-desc">Beste zuerst</option>
+          <option value="score-asc">Schwächste zuerst</option>
+          <option value="name-asc">Name A–Z</option>
+        </select>
+      </div>
+
+      <div style="overflow-x:auto;">
+        <table class="results-table">
+          <thead>
+            <tr>
+              <th>Datum</th>
+              <th>Schüler</th>
+              <th>Thema</th>
+              <th>Inhalt</th>
+              <th>Sprache</th>
+              <th>Gesamt</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="resultsBody"></tbody>
+        </table>
+      </div>
+
+      <div id="noResults" class="empty-state" style="display:none;">
+        <div class="icon">📋</div>
+        <p>Keine Ergebnisse für diesen Filter.</p>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    © 2026 St. Anna Gymnasium · Lehrer-Dashboard · <a href="index.html">Zum Trainer</a>
+  </footer>
+</div>
+
+<script>
+const API_BASE = "https://sag-abi-mediation-api.sanktannagymnasium.workers.dev";
+let teacherPw = "";
+let allResults = [];
+
+/* ====== LOGIN ====== */
+function loginTeacher() {
+  teacherPw = document.getElementById("teacherPassword").value.trim();
+  if (!teacherPw) return;
+  loadResults();
+}
+
+async function loadResults() {
+  const err = document.getElementById("loginError");
+  try {
+    const res = await fetch(API_BASE + "/api/results", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Access-Password": "stanna2026"
+      },
+      body: JSON.stringify({ teacher_password: teacherPw })
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      err.textContent = data.error || "Fehler beim Laden.";
+      err.style.display = "block";
+      return;
+    }
+
+    err.style.display = "none";
+    allResults = data.results || [];
+
+    // Show app
+    document.getElementById("login-screen").style.display = "none";
+    document.getElementById("app-wrapper").style.display = "flex";
+
+    renderAll();
+  } catch (e) {
+    err.textContent = "Verbindungsfehler: " + e.message;
+    err.style.display = "block";
+  }
+}
+
+/* ====== RENDER ====== */
+function renderAll() {
+  renderStats();
+  renderStudentCards();
+  renderTable();
+  renderChart();
+  populateFilter();
+}
+
+function renderStats() {
+  const students = [...new Set(allResults.map(r => r.student_name))];
+  const totals = allResults.map(r => r.total).filter(t => t != null);
+  const avg = totals.length ? (totals.reduce((a,b) => a+b, 0) / totals.length).toFixed(1) : "–";
+  const best = totals.length ? Math.max(...totals) : "–";
+
+  document.getElementById("statStudents").textContent = students.length;
+  document.getElementById("statAttempts").textContent = allResults.length;
+  document.getElementById("statAverage").textContent = avg;
+  document.getElementById("statBest").textContent = best;
+}
+
+function renderStudentCards() {
+  const grid = document.getElementById("studentGrid");
+  const noStudents = document.getElementById("noStudents");
+  const students = {};
+
+  allResults.forEach(r => {
+    if (!students[r.student_name]) {
+      students[r.student_name] = { attempts: 0, totals: [], latest: r.date };
+    }
+    const s = students[r.student_name];
+    s.attempts++;
+    if (r.total != null) s.totals.push(r.total);
+    if (r.date > s.latest) s.latest = r.date;
+  });
+
+  const names = Object.keys(students).sort();
+
+  if (!names.length) {
+    grid.innerHTML = "";
+    noStudents.style.display = "block";
+    return;
+  }
+
+  noStudents.style.display = "none";
+  grid.innerHTML = names.map(name => {
+    const s = students[name];
+    const avg = s.totals.length ? (s.totals.reduce((a,b) => a+b, 0) / s.totals.length).toFixed(1) : "–";
+    const best = s.totals.length ? Math.max(...s.totals) : "–";
+    const trend = s.totals.length >= 2
+      ? (s.totals[s.totals.length-1] >= s.totals[s.totals.length-2] ? "📈" : "📉")
+      : "";
+    return `<div class="student-card">
+      <div class="student-name">${esc(name)} ${trend}</div>
+      <div class="student-stats">
+        <span><strong>${s.attempts}</strong> Versuche</span>
+        <span>Ø <strong>${avg}</strong></span>
+        <span>Best: <strong>${best}</strong></span>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+function renderTable() {
+  const filterStudent = document.getElementById("filterStudent").value;
+  const sort = document.getElementById("filterSort").value;
+
+  let filtered = allResults.slice();
+  if (filterStudent) {
+    filtered = filtered.filter(r => r.student_name === filterStudent);
+  }
+
+  // Sort
+  filtered.sort((a, b) => {
+    switch(sort) {
+      case "date-asc": return new Date(a.date) - new Date(b.date);
+      case "date-desc": return new Date(b.date) - new Date(a.date);
+      case "score-desc": return (b.total || 0) - (a.total || 0);
+      case "score-asc": return (a.total || 0) - (b.total || 0);
+      case "name-asc": return a.student_name.localeCompare(b.student_name);
+      default: return 0;
+    }
+  });
+
+  const tbody = document.getElementById("resultsBody");
+  const noResults = document.getElementById("noResults");
+
+  if (!filtered.length) {
+    tbody.innerHTML = "";
+    noResults.style.display = "block";
+    return;
+  }
+
+  noResults.style.display = "none";
+  tbody.innerHTML = filtered.map(r => {
+    const d = new Date(r.date);
+    const dateStr = `${d.getDate()}.${d.getMonth()+1}.${d.getFullYear()}`;
+    const timeStr = `${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;
+    return `<tr>
+      <td>${dateStr}<br><span style="font-size:.75rem;color:var(--ink-muted)">${timeStr}</span></td>
+      <td><strong>${esc(r.student_name)}</strong></td>
+      <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(r.topic || "—")}</td>
+      <td class="score-cell">${r.content ?? "–"}/4</td>
+      <td class="score-cell">${r.language ?? "–"}/6</td>
+      <td class="score-cell" style="font-size:1.05rem;">${r.total ?? "–"}/10</td>
+      <td><button class="delete-btn" onclick="deleteResult('${r.id}')" title="Löschen">✕</button></td>
+    </tr>`;
+  }).join("");
+}
+
+function populateFilter() {
+  const select = document.getElementById("filterStudent");
+  const current = select.value;
+  const students = [...new Set(allResults.map(r => r.student_name))].sort();
+
+  select.innerHTML = '<option value="">Alle Schüler</option>' +
+    students.map(n => `<option value="${esc(n)}" ${n === current ? "selected" : ""}>${esc(n)}</option>`).join("");
+}
+
+/* ====== CHART ====== */
+let chartInstance = null;
+
+function renderChart() {
+  const ctx = document.getElementById("classChart");
+  if (!ctx || !allResults.length) return;
+  if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
+
+  const isDark = document.documentElement.getAttribute("data-theme") === "dark";
+  const gridColor = isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)";
+  const textColor = isDark ? "#b0b0c8" : "#8888a4";
+
+  // Group by date (day)
+  const byDay = {};
+  allResults.forEach(r => {
+    const day = r.date?.slice(0, 10) || "unknown";
+    if (!byDay[day]) byDay[day] = [];
+    if (r.total != null) byDay[day].push(r.total);
+  });
+
+  const days = Object.keys(byDay).sort();
+  const averages = days.map(d => {
+    const t = byDay[d];
+    return t.length ? +(t.reduce((a,b) => a+b, 0) / t.length).toFixed(1) : null;
+  });
+  const counts = days.map(d => byDay[d].length);
+
+  const labels = days.map(d => {
+    const dt = new Date(d);
+    return `${dt.getDate()}.${dt.getMonth()+1}`;
+  });
+
+  chartInstance = new Chart(ctx, {
+    type: "bar",
+    data: {
+      labels,
+      datasets: [
+        {
+          label: "Ø Punkte",
+          data: averages,
+          backgroundColor: "rgba(37,99,235,0.6)",
+          borderColor: "#2563eb",
+          borderWidth: 1,
+          borderRadius: 4,
+          yAxisID: "y"
+        },
+        {
+          label: "Anzahl Versuche",
+          data: counts,
+          type: "line",
+          borderColor: "#f59e0b",
+          backgroundColor: "transparent",
+          borderWidth: 2,
+          pointRadius: 4,
+          pointBackgroundColor: "#f59e0b",
+          tension: 0.3,
+          yAxisID: "y2"
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { labels: { color: textColor, font: { size: 11 } } }
+      },
+      scales: {
+        y: {
+          min: 0, max: 10,
+          grid: { color: gridColor },
+          ticks: { color: textColor, stepSize: 2 },
+          title: { display: true, text: "Punkte", color: textColor }
+        },
+        y2: {
+          position: "right",
+          min: 0,
+          grid: { display: false },
+          ticks: { color: textColor, stepSize: 1 },
+          title: { display: true, text: "Versuche", color: textColor }
+        },
+        x: {
+          grid: { display: false },
+          ticks: { color: textColor }
+        }
+      }
+    }
+  });
+}
+
+/* ====== ACTIONS ====== */
+async function deleteResult(id) {
+  if (!confirm("Ergebnis wirklich löschen?")) return;
+  try {
+    await fetch(API_BASE + "/api/delete-result", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Access-Password": "stanna2026"
+      },
+      body: JSON.stringify({ teacher_password: teacherPw, result_id: id })
+    });
+    allResults = allResults.filter(r => r.id !== id);
+    renderAll();
+  } catch (e) {
+    alert("Fehler: " + e.message);
+  }
+}
+
+function exportCSV() {
+  if (!allResults.length) return alert("Keine Daten vorhanden.");
+  const header = "Datum,Uhrzeit,Schüler,Thema,Inhalt,Sprache,Gesamt";
+  const rows = allResults.map(r => {
+    const d = new Date(r.date);
+    return [
+      `${d.getDate()}.${d.getMonth()+1}.${d.getFullYear()}`,
+      `${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`,
+      `"${r.student_name}"`,
+      `"${(r.topic || "").replace(/"/g, '""')}"`,
+      r.content ?? "",
+      r.language ?? "",
+      r.total ?? ""
+    ].join(",");
+  });
+
+  const csv = header + "\n" + rows.join("\n");
+  const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `mediation-ergebnisse-${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+/* ====== DARK MODE ====== */
+function toggleDark() {
+  const html = document.documentElement;
+  const isDark = html.getAttribute("data-theme") === "dark";
+  html.setAttribute("data-theme", isDark ? "light" : "dark");
+  localStorage.setItem("theme", isDark ? "light" : "dark");
+  document.getElementById("themeBtn").textContent = isDark ? "🌙" : "☀️";
+  if (chartInstance) renderChart();
+}
+
+function initTheme() {
+  const saved = localStorage.getItem("theme");
+  const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+  const theme = saved || (prefersDark ? "dark" : "light");
+  document.documentElement.setAttribute("data-theme", theme);
+  document.getElementById("themeBtn").textContent = theme === "dark" ? "☀️" : "🌙";
+}
+
+/* ====== UTILS ====== */
+function esc(str) {
+  return String(str || "").replace(/[&<>"']/g, m => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;"
+  }[m]));
+}
+
+/* ====== INIT ====== */
+window.onload = function() {
+  initTheme();
+};
+</script>
+
+</body>
+</html>

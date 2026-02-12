@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>St. Anna Mediation Trainer</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📝</text></svg>">
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -972,6 +973,17 @@ footer {
 
     <!-- ====== STEP 3: WRITE ====== -->
     <section id="write">
+      <!-- Collapsible Task Reference -->
+      <details class="card" id="taskReference" style="cursor:pointer;">
+        <summary style="font-family:var(--font-display);font-size:1.1rem;font-weight:400;user-select:none;">
+          📋 Aufgabenstellung anzeigen
+        </summary>
+        <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border);">
+          <p style="font-weight:600;color:var(--accent);margin-bottom:.5rem;" id="writeTaskInstruction"></p>
+          <div style="max-height:300px;overflow-y:auto;font-size:.88rem;color:var(--ink-light);line-height:1.6;padding:.8rem;background:var(--bg-warm);border-radius:var(--radius-sm);" id="writeArticlePreview"></div>
+        </div>
+      </details>
+
       <!-- Timer Bar -->
       <div class="timer-bar" id="timerBar">
         <div>
@@ -1174,6 +1186,7 @@ footer {
 
   <footer>
     © 2026 St. Anna Gymnasium · Mediation Trainer · Created by DZ
+    <br><a href="dashboard.html" style="color:var(--ink-muted);font-size:.75rem;text-decoration:none;opacity:.6;">Lehrer-Dashboard →</a>
   </footer>
 
 </div>
@@ -1564,6 +1577,12 @@ function renderExam(d) {
   document.getElementById("articleBody").innerHTML =
     (d.article_text || "").split("\n").filter(p => p.trim()).map(p => `<p>${escapeHtml(p)}</p>`).join("");
   document.getElementById("wordCountLabel").innerText = countWords(d.article_text || "");
+
+  // Also populate write-tab reference panel
+  document.getElementById("writeTaskInstruction").innerText = d.task_instruction || "";
+  document.getElementById("writeArticlePreview").innerHTML =
+    `<strong>${escapeHtml(d.headline || "")}</strong><br><br>` +
+    (d.article_text || "").split("\n").filter(p => p.trim()).map(p => `<p>${escapeHtml(p)}</p>`).join("");
 }
 
 /* ================= SUBMIT FOR GRADING ================= */
@@ -1601,13 +1620,23 @@ async function submitForCorrection() {
     document.getElementById("scoreLang").textContent = ls != null ? ls : "–";
     document.getElementById("scoreTotal").textContent = ts != null ? ts : "–";
 
-    // Save to history
+    // Save to history (local)
     saveToHistory({
       topic: CONFIG.storedData.headline || document.getElementById("topicSelect")?.value || "—",
       content: cs,
       language: ls,
       total: ts
     });
+
+    // Save to server (for teacher dashboard) – fire and forget
+    apiCall("/api/submit-result", {
+      student_name: sessionStorage.getItem("student_name") || "Unbekannt",
+      topic: CONFIG.storedData.headline || "—",
+      content: cs,
+      language: ls,
+      total: ts,
+      date: new Date().toISOString()
+    }).catch(() => {}); // silently fail if server unavailable
 
     // Stop timer if running
     stopTimer();

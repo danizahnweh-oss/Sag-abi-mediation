@@ -92,6 +92,16 @@ export default {
       if (pathname === "/api/model-answer" && request.method === "POST") {
         return await handleModelAnswer(request, env);
       }
+      // Dashboard endpoints
+      if (pathname === "/api/submit-result" && request.method === "POST") {
+        return await handleSubmitResult(request, env);
+      }
+      if (pathname === "/api/results" && request.method === "POST") {
+        return await handleGetResults(request, env);
+      }
+      if (pathname === "/api/delete-result" && request.method === "POST") {
+        return await handleDeleteResult(request, env);
+      }
       return new Response("Not Found", { status: 404 });
     } catch (err) {
       return new Response(
@@ -370,6 +380,78 @@ async function callOpenAI(env, messages, maxTokens = 4000) {
     throw new Error(data?.error?.message || "OpenAI error");
   }
   return data.choices[0].message.content;
+}
+
+/* ================= DASHBOARD: SUBMIT RESULT ================= */
+async function handleSubmitResult(request, env) {
+  const { student_name, topic, content, language, total, date } = await request.json();
+
+  if (!student_name || total == null) {
+    return jsonResponse({ error: "student_name and total required" }, 400);
+  }
+
+  // Get existing results
+  let results = [];
+  try {
+    const raw = await env.RESULTS_KV.get("all_results");
+    if (raw) results = JSON.parse(raw);
+  } catch {}
+
+  // Add new result
+  results.push({
+    id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+    student_name,
+    topic: topic || "—",
+    content: content ?? null,
+    language: language ?? null,
+    total,
+    date: date || new Date().toISOString()
+  });
+
+  // Save back
+  await env.RESULTS_KV.put("all_results", JSON.stringify(results));
+
+  return jsonResponse({ success: true, count: results.length });
+}
+
+/* ================= DASHBOARD: GET RESULTS ================= */
+async function handleGetResults(request, env) {
+  const { teacher_password } = await request.json();
+
+  // Separate teacher password check
+  const teacherPw = env.TEACHER_PASSWORD || "stanna-lehrer-2026";
+  if (teacher_password !== teacherPw) {
+    return jsonResponse({ error: "Falsches Lehrer-Passwort." }, 401);
+  }
+
+  let results = [];
+  try {
+    const raw = await env.RESULTS_KV.get("all_results");
+    if (raw) results = JSON.parse(raw);
+  } catch {}
+
+  return jsonResponse({ results });
+}
+
+/* ================= DASHBOARD: DELETE RESULT ================= */
+async function handleDeleteResult(request, env) {
+  const { teacher_password, result_id } = await request.json();
+
+  const teacherPw = env.TEACHER_PASSWORD || "stanna-lehrer-2026";
+  if (teacher_password !== teacherPw) {
+    return jsonResponse({ error: "Falsches Lehrer-Passwort." }, 401);
+  }
+
+  let results = [];
+  try {
+    const raw = await env.RESULTS_KV.get("all_results");
+    if (raw) results = JSON.parse(raw);
+  } catch {}
+
+  results = results.filter(r => r.id !== result_id);
+  await env.RESULTS_KV.put("all_results", JSON.stringify(results));
+
+  return jsonResponse({ success: true, count: results.length });
 }
 
 /* ================= HELPERS ================= */
