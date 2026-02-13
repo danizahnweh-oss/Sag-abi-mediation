@@ -844,8 +844,11 @@ footer {
         </div>
 
         <div class="form-group">
-          <label>Länge Quelltext (Wörter)</label>
-          <input type="number" id="sourceLength" value="600" min="200" max="1500" step="50">
+          <label>Textart</label>
+          <select id="textTypeSelect">
+            <option value="nicht-literarisch">Text I – nicht-literarisch (Zeitungsartikel, Essay, Feature)</option>
+            <option value="literarisch">Text II – literarisch (Roman-/Kurzgeschichtenauszug)</option>
+          </select>
         </div>
 
         <button class="btn" id="generateBtn" onclick="generateExam()">
@@ -1223,27 +1226,42 @@ const GENERATION_PROMPT_TEMPLATE = `Du bist ein Experte für das bayerische Abit
 
 NIVEAU: {level}
 THEMA: {topic}
-STRIKTE ZIELLÄNGE DES ENGLISCHEN TEXTS: exakt ca. {length} Wörter
+TEXTART: {texttype}
+STRIKTE ZIELLÄNGE: ca. 700 Wörter
 
-Erstelle einen ENGLISCHEN Ausgangstext UND drei Aufgaben dazu, genau wie im bayerischen Abitur 2026.
+Erstelle einen ENGLISCHEN Ausgangstext UND drei Aufgaben dazu, exakt im Stil des bayerischen Abiturs 2026.
 
 TEIL 1 – ENGLISCHER AUSGANGSTEXT:
-- Schreibe einen authentisch wirkenden englischen Text (Zeitungsartikel, Essay oder Feature).
-- Der Text muss ungefähr {length} Wörter haben (Toleranz ±10%).
-- Durchgängiger Fließtext, sprachlich anspruchsvoll, klare Argumentation.
-- Verwende analysierbare Stilmittel (Metaphern, rhetorische Fragen, Ironie etc.).
+
+WENN TEXTART = "nicht-literarisch":
+- Schreibe einen authentisch wirkenden englischen Sachtext (Zeitungsartikel, Essay, Feature, Reportage).
+- Ca. 700 Wörter (Toleranz ±10%). Durchgängiger Fließtext, sprachlich anspruchsvoll, klare Argumentation.
+- Verwende analysierbare Stilmittel (Metaphern, rhetorische Fragen, Ironie, Kontraste etc.).
 - Erfinde einen plausiblen Autor und eine Quelle (z.B. "Sarah Mitchell, The Guardian, 15.03.2025").
 
-TEIL 2 – DREI AUFGABEN im Stil des bayerischen Abiturs:
+WENN TEXTART = "literarisch":
+- Schreibe einen Auszug aus einem fiktiven englischsprachigen Roman oder einer Kurzgeschichte.
+- Ca. 700 Wörter. Erzählerischer Text mit Figurenentwicklung, Atmosphäre, Dialogen.
+- Verwende literarische Stilmittel (Bildsprache, Symbolik, Erzählperspektive, Stream of Consciousness, Kontraste, Foreshadowing etc.).
+- Gib eine kurze Kontextinfo am Anfang (1-2 Sätze kursiv, z.B. "The following passage is set in...").
+- Erfinde einen plausiblen Autor (z.B. "Emma Whitfield, The Glass Between Us, 2023").
 
-Aufgabe 1 (30%): "Outline..." – Comprehension. Zusammenfassung des Textinhalts.
-Aufgabe 2 (30%): "Analyse..." – Analyse der Sprache, Stilmittel, Argumentation.
-Aufgabe 3 (40%): ZWEI Wahlaufgaben:
-  3.1: Persönliche Stellungnahme (assess/discuss) ausgehend von einem Zitat aus dem Text.
-  3.2: Gestaltendes Schreiben (speech, blog entry, e-mail, article) in konkreter Situation.
+TEIL 2 – DREI AUFGABEN:
 
-Bei eA: Aufgaben sprachlich und inhaltlich anspruchsvoller.
-Bei gA: Aufgaben etwas zugänglicher.
+Aufgabe 1 (30%): Eine kurze, präzise Outline-Aufgabe.
+- Bei nicht-literarisch: z.B. "Outline the main arguments presented in the article and the author's stance on [Thema]."
+- Bei literarisch: z.B. "Outline what the reader learns about [Figur] and [his/her] state of mind."
+
+Aufgabe 2 (30%): Eine kurze, präzise Analyse-Aufgabe. MAXIMAL 1-2 Sätze!
+- Bei nicht-literarisch: z.B. "Analyse the writer's attitude. Focus on the use of language."
+- Bei literarisch: z.B. "Analyse how the setting is used to create atmosphere. Focus on the author's use of language."
+
+Aufgabe 3 (40%): ZWEI Wahlaufgaben (3.1 und 3.2):
+- 3.1: Ein Zitat aus dem Text + "Taking the quotation as a starting point, assess/discuss..." (1 Satz)
+- 3.2: Situationsbeschreibung (1-2 Sätze) + "Write a/an [Textsorte] in which you..." (1 Satz)
+
+Bei eA: Aufgaben sprachlich und inhaltlich anspruchsvoller, tiefere Analyse erwartet.
+Bei gA: Aufgaben etwas zugänglicher formuliert.
 
 OUTPUT FORMAT (NUR reines JSON):
 {
@@ -1251,10 +1269,10 @@ OUTPUT FORMAT (NUR reines JSON):
   "source_info": "Autor, Quelle, Datum",
   "article_text": "Der komplette englische Text...",
   "task_1": "Outline...",
-  "task_2": "Analyse...",
-  "task_3_1_quote": "Zitat aus dem Text für 3.1",
+  "task_2": "Analyse... Focus on...",
+  "task_3_1_quote": "Exaktes Zitat aus dem Text (mit Zeilenangabe)",
   "task_3_1": "Taking the quotation as a starting point, assess/discuss...",
-  "task_3_2_situation": "Situationsbeschreibung für 3.2",
+  "task_3_2_situation": "Situationsbeschreibung (1-2 Sätze)",
   "task_3_2": "Write a/an [Textsorte] in which you..."
 }`;
 
@@ -1424,7 +1442,7 @@ window.onload = function () {
 /* ================= GENERATE ================= */
 async function generateExam() {
   const topic = document.getElementById("topicSelect").value;
-  const length = Number(document.getElementById("sourceLength").value || 600);
+  const textType = document.getElementById("textTypeSelect").value;
   const level = sessionStorage.getItem("student_level") || "gA";
   const btn = document.getElementById("generateBtn");
 
@@ -1432,13 +1450,14 @@ async function generateExam() {
   document.getElementById("setupLoader").style.display = "block";
 
   try {
-    // Build prompt with level substituted
+    // Build prompt with level and text type substituted
     const prompt = GENERATION_PROMPT_TEMPLATE
-      .replace(/\{level\}/g, level === "eA" ? "erhöhtes Anforderungsniveau (eA)" : "grundlegendes Anforderungsniveau (gA)");
+      .replace(/\{level\}/g, level === "eA" ? "erhöhtes Anforderungsniveau (eA)" : "grundlegendes Anforderungsniveau (gA)")
+      .replace(/\{texttype\}/g, textType);
 
     const data = await apiCall("/api/generate", {
       topic,
-      source_len_words: length,
+      source_len_words: 700,
       prompt_template: prompt
     });
 
