@@ -444,6 +444,11 @@ footer a { color: var(--accent); text-decoration: none; }
           <option value="2e3">2e3</option>
           <option value="2e4">2e4</option>
         </select>
+        <select id="filterType" onchange="renderTable(); renderStudentCards(); renderChart();">
+          <option value="">Alle Übungstypen</option>
+          <option value="mediation">🌍 Mediation</option>
+          <option value="writing">✍️ Textproduktion</option>
+        </select>
         <select id="filterStudent" onchange="renderTable()">
           <option value="">Alle Schüler</option>
         </select>
@@ -463,6 +468,7 @@ footer a { color: var(--accent); text-decoration: none; }
               <th>Datum</th>
               <th>Schüler</th>
               <th>Kurs</th>
+              <th>Typ</th>
               <th>Thema</th>
               <th>Inhalt</th>
               <th>Sprache</th>
@@ -534,8 +540,11 @@ async function loadResults() {
 /* ====== RENDER ====== */
 function getFiltered() {
   const course = document.getElementById("filterCourse")?.value || "";
-  if (!course) return allResults;
-  return allResults.filter(r => r.course === course);
+  const type = document.getElementById("filterType")?.value || "";
+  let data = allResults;
+  if (course) data = data.filter(r => r.course === course);
+  if (type) data = data.filter(r => r.type === type);
+  return data;
 }
 
 function renderAll() {
@@ -642,6 +651,7 @@ function renderTable() {
       <td>${dateStr}<br><span style="font-size:.75rem;color:var(--ink-muted)">${timeStr}</span></td>
       <td><strong>${esc(r.student_name)}</strong></td>
       <td><span style="font-size:.8rem;background:var(--accent-soft);color:var(--accent);padding:.15rem .5rem;border-radius:4px;font-weight:700;">${esc(r.course || "–")}</span></td>
+      <td><span style="font-size:.75rem;">${r.type === "writing" ? "✍️" : "🌍"}</span></td>
       <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(r.topic || "—")}</td>
       <td class="score-cell">${r.content ?? "–"}/15</td>
       <td class="score-cell">${r.language ?? "–"}/15</td>

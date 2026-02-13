@@ -397,7 +397,7 @@ async function callOpenAI(env, messages, maxTokens = 4000) {
 
 /* ================= DASHBOARD: SUBMIT RESULT ================= */
 async function handleSubmitResult(request, env) {
-  const { student_name, course, topic, content, language, total, date } = await request.json();
+  const { student_name, course, type, topic, content, language, total, date } = await request.json();
 
   if (!student_name || total == null) {
     return jsonResponse({ error: "student_name and total required" }, 400);
@@ -415,6 +415,7 @@ async function handleSubmitResult(request, env) {
     id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
     student_name,
     course: course || "",
+    type: type || "mediation",
     topic: topic || "—",
     content: content ?? null,
     language: language ?? null,
