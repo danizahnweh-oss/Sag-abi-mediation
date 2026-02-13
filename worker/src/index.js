@@ -145,12 +145,16 @@ async function handleGenerate(request, env) {
 /* ================= GRADE ================= */
 async function handleGrade(request, env) {
   const body = await request.json();
-  const { source_text_de, task_en, student_text_en, rubric_prompt } = body;
+  const { source_text_de, task_en, student_text_en, rubric_prompt, assessment_type } = body;
+
+  const assessmentLabel = assessment_type === "textproduktion"
+    ? "Textproduktion"
+    : "Sprachmittlung (mediation)";
 
   const messages = [
     {
       role: "system",
-      content: `You are a strict German Abitur English teacher grading a Sprachmittlung (mediation).
+      content: `You are a strict German Abitur English teacher grading a ${assessmentLabel}.
 You must grade using the official ISB Bewertungsraster with Notenpunkte (0-15 NP).
 Return your evaluation in the following JSON format ONLY (no markdown, no extra text):
 {
