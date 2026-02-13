@@ -124,16 +124,20 @@ async function handleGenerate(request, env) {
     .replace(/\{length\}/g, String(source_len_words || 600))
     .replace(/\$\{length\}/g, String(source_len_words || 600));
 
-  // Dynamic token limit: ~1.5 tokens per German word + buffer for JSON + task text
-  // This physically prevents the model from generating excessively long texts
-  const wordTarget = source_len_words || 600;
-  const estimatedTokens = Math.round(wordTarget * 1.8) + 500; // article tokens + task + JSON overhead
-  const maxTokens = Math.min(Math.max(estimatedTokens, 1500), 6000); // clamp between 1500-6000
+  // Dynamic token limit: English text ~1.3 tokens/word + tasks + JSON overhead
+  const wordTarget = source_len_words || 700;
+  const estimatedTokens = Math.round(wordTarget * 1.5) + 1200; // article + tasks + JSON
+  const maxTokens = Math.min(Math.max(estimatedTokens, 2500), 8000); // clamp between 2500-8000
 
   const openaiRes = await callOpenAI(env, [
     {
       role: "system",
-      content: "You are an Abitur exam generator. Return valid JSON only. No markdown fences."
+      content: `You are an Abitur exam generator. Return valid JSON only. No markdown fences. No preamble.
+CRITICAL: The JSON must be valid. All string values must properly escape special characters:
+- Use \\" for quotes inside strings (especially in dialogues and citations)
+- Use \\n for newlines inside strings
+- Do NOT use actual line breaks inside JSON string values
+- Ensure all quotes in dialogue passages are escaped as \\"`
     },
     { role: "user", content: prompt }
   ], maxTokens);
@@ -471,22 +475,68 @@ async function handleDeleteResult(request, env) {
 
 /* ================= HELPERS ================= */
 function extractJSON(text) {
-  try {
-    // Remove markdown code fences if present
-    const clean = text.replace(/```json\s*/g, "").replace(/```\s*/g, "").trim();
-    return JSON.parse(clean);
-  } catch {
-    // Try to find JSON object in the text
-    const match = text.match(/\{[\s\S]*\}/);
-    if (match) {
-      try {
-        return JSON.parse(match[0]);
-      } catch {
-        throw new Error("Model did not return valid JSON.");
+  // Step 1: Clean markdown fences
+  let clean = text.replace(/```json\s*/g, "").replace(/```\s*/g, "").trim();
+
+  // Step 2: Try direct parse
+  try { return JSON.parse(clean); } catch {}
+
+  // Step 3: Extract JSON object from surrounding text
+  const match = clean.match(/\{[\s\S]*\}/);
+  if (match) {
+    try { return JSON.parse(match[0]); } catch {}
+
+    // Step 4: Try to repair common issues
+    let repaired = match[0];
+
+    // Fix unescaped newlines inside strings
+    repaired = repaired.replace(/:\s*"([\s\S]*?)"\s*([,\}])/g, (m, val, end) => {
+      const fixed = val
+        .replace(/\n/g, "\\n")
+        .replace(/\r/g, "\\r")
+        .replace(/\t/g, "\\t");
+      return ': "' + fixed + '"' + end;
+    });
+    try { return JSON.parse(repaired); } catch {}
+
+    // Step 5: More aggressive repair – fix unescaped quotes in values
+    // Replace the content between key-value pairs
+    repaired = match[0];
+    repaired = repaired.replace(/([{,]\s*"[^"]+"\s*:\s*")([^]*?)("\s*[,\}])/g, (m, pre, val, post) => {
+      // Escape any unescaped quotes inside the value
+      const fixed = val
+        .replace(/\\/g, "\\\\")
+        .replace(/"/g, '\\"')
+        .replace(/\n/g, "\\n")
+        .replace(/\r/g, "")
+        .replace(/\t/g, "\\t");
+      return pre + fixed + post;
+    });
+    try { return JSON.parse(repaired); } catch {}
+
+    // Step 6: Last resort – try to build object from key extraction
+    try {
+      const keys = ["headline", "source_info", "article_text", "task_instruction",
+                     "task_1", "task_2", "task_3_1_quote", "task_3_1",
+                     "task_3_2_situation", "task_3_2",
+                     "inhalt_np", "sprache_np", "gesamt_np", "feedback", "corrections"];
+      const obj = {};
+      for (const key of keys) {
+        const re = new RegExp('"' + key + '"\\s*:\\s*"([\\s\\S]*?)"\\s*[,\\}]');
+        const km = clean.match(re);
+        if (km) obj[key] = km[1].replace(/\\n/g, "\n").replace(/\\"/g, '"');
       }
-    }
-    throw new Error("Model did not return valid JSON.");
+      // Also try numeric values
+      for (const key of ["inhalt_np", "sprache_np", "gesamt_np", "content_textstructure", "language", "total"]) {
+        const re = new RegExp('"' + key + '"\\s*:\\s*(\\d+)');
+        const km = clean.match(re);
+        if (km) obj[key] = parseInt(km[1]);
+      }
+      if (Object.keys(obj).length >= 2) return obj;
+    } catch {}
   }
+
+  throw new Error("Model did not return valid JSON.");
 }
 
 function jsonResponse(data, status = 200) {
