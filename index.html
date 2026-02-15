@@ -90,14 +90,18 @@ footer a{color:var(--accent);text-decoration:none}
   <footer>© 2026 St. Anna Gymnasium · English Trainer · Created by DZ<br><a href="dashboard.html" style="opacity:.5;font-size:.75rem;">Lehrer-Dashboard →</a></footer>
 </div>
 <script>
-const ACCESS_PASSWORD="stanna2026";
-function doLogin(){
+async function doLogin(){
   const name=document.getElementById("studentName").value.trim(),course=document.getElementById("studentCourse").value,level=document.getElementById("studentLevel").value,pw=document.getElementById("accessPassword").value.trim(),err=document.getElementById("loginError");
   if(!name){err.textContent="Bitte gib deinen Namen ein.";err.style.display="block";return}
   if(!course){err.textContent="Bitte wähle deinen Kurs.";err.style.display="block";return}
   if(!level){err.textContent="Bitte wähle dein Niveau (gA/eA).";err.style.display="block";return}
-  if(pw!==ACCESS_PASSWORD){err.textContent="Falsches Passwort.";err.style.display="block";return}
-  sessionStorage.setItem("access","1");sessionStorage.setItem("student_name",name);sessionStorage.setItem("student_course",course);sessionStorage.setItem("student_level",level);
+  if(!pw){err.textContent="Bitte gib das Passwort ein.";err.style.display="block";return}
+  // Validate password server-side
+  try{
+    const res=await fetch("https://sag-abi-mediation-api.sanktannagymnasium.workers.dev/api/verify",{method:"POST",headers:{"Content-Type":"application/json","X-Access-Password":pw},body:JSON.stringify({})});
+    if(!res.ok){err.textContent="Falsches Passwort.";err.style.display="block";return}
+  }catch(e){err.textContent="Verbindungsfehler. Bitte versuche es erneut.";err.style.display="block";return}
+  sessionStorage.setItem("access","1");sessionStorage.setItem("student_name",name);sessionStorage.setItem("student_course",course);sessionStorage.setItem("student_level",level);sessionStorage.setItem("access_password",pw);
   showModules();
 }
 function showModules(){

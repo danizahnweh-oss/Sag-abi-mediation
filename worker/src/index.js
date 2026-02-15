@@ -2,11 +2,14 @@
 const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute
 const MAX_REQUESTS_PER_WINDOW = 10;   // max 10 requests per minute per IP
 const rateLimitMap = new Map();
+let currentOrigin = ""; // set per request for CORS
 
 function checkAuth(request, env) {
+  if (!env.ACCESS_PASSWORD) {
+    return jsonResponse({ error: "Server-Konfigurationsfehler." }, 500);
+  }
   const authHeader = request.headers.get("X-Access-Password") || "";
-  const accessPassword = env.ACCESS_PASSWORD || "stanna2026";
-  if (authHeader !== accessPassword) {
+  if (authHeader !== env.ACCESS_PASSWORD) {
     return jsonResponse({ error: "Nicht autorisiert. Falsches Passwort." }, 401);
   }
   return null; // auth OK
@@ -58,10 +61,12 @@ function cleanupRateLimitMap() {
 export default {
   async fetch(request, env) {
     const { pathname } = new URL(request.url);
+    const origin = request.headers.get("Origin") || "";
+    currentOrigin = origin;
 
     // CORS Preflight
     if (request.method === "OPTIONS") {
-      return new Response(null, { headers: corsHeaders() });
+      return new Response(null, { headers: corsHeaders(origin) });
     }
 
     try {
@@ -77,6 +82,9 @@ export default {
         cleanupRateLimitMap();
       }
 
+      if (pathname === "/api/verify" && request.method === "POST") {
+        return jsonResponse({ ok: true });
+      }
       if (pathname === "/api/generate" && request.method === "POST") {
         return await handleGenerate(request, env);
       }
@@ -104,9 +112,10 @@ export default {
       }
       return new Response("Not Found", { status: 404 });
     } catch (err) {
+      console.error("API Error:", err.message);
       return new Response(
-        JSON.stringify({ error: err.message }),
-        { status: 500, headers: corsHeaders() }
+        JSON.stringify({ error: "Ein interner Fehler ist aufgetreten." }),
+        { status: 500, headers: corsHeaders(origin) }
       );
     }
   }
@@ -117,12 +126,31 @@ async function handleGenerate(request, env) {
   const body = await request.json();
   const { topic, source_len_words, prompt_template } = body;
 
+  // Input validation
+  if (!prompt_template || typeof prompt_template !== "string") {
+    return jsonResponse({ error: "prompt_template ist erforderlich." }, 400);
+  }
+  if (prompt_template.length > 10000) {
+    return jsonResponse({ error: "prompt_template ist zu lang." }, 400);
+  }
+  if (topic && typeof topic !== "string") {
+    return jsonResponse({ error: "topic muss ein String sein." }, 400);
+  }
+  if (topic && topic.length > 500) {
+    return jsonResponse({ error: "topic ist zu lang (max 500 Zeichen)." }, 400);
+  }
+  const wordLimit = parseInt(source_len_words) || 600;
+  if (wordLimit < 100 || wordLimit > 2000) {
+    return jsonResponse({ error: "source_len_words muss zwischen 100 und 2000 liegen." }, 400);
+  }
+
   // Replace placeholders that the frontend couldn't resolve
+  const safeTopic = (topic || "").trim();
   const prompt = prompt_template
-    .replace(/\{topic\}/g, topic || "")
-    .replace(/\$\{topic\}/g, topic || "")
-    .replace(/\{length\}/g, String(source_len_words || 600))
-    .replace(/\$\{length\}/g, String(source_len_words || 600));
+    .replace(/\{topic\}/g, safeTopic)
+    .replace(/\$\{topic\}/g, safeTopic)
+    .replace(/\{length\}/g, String(wordLimit))
+    .replace(/\$\{length\}/g, String(wordLimit));
 
   // Dynamic token limit: English text ~1.3 tokens/word + tasks + JSON overhead
   const wordTarget = source_len_words || 700;
@@ -150,6 +178,23 @@ CRITICAL: The JSON must be valid. All string values must properly escape special
 async function handleGrade(request, env) {
   const body = await request.json();
   const { source_text_de, task_en, student_text_en, rubric_prompt } = body;
+
+  // Input validation
+  if (!source_text_de || typeof source_text_de !== "string") {
+    return jsonResponse({ error: "source_text_de ist erforderlich." }, 400);
+  }
+  if (!task_en || typeof task_en !== "string") {
+    return jsonResponse({ error: "task_en ist erforderlich." }, 400);
+  }
+  if (!student_text_en || typeof student_text_en !== "string") {
+    return jsonResponse({ error: "student_text_en ist erforderlich." }, 400);
+  }
+  if (source_text_de.length > 20000 || task_en.length > 5000 || student_text_en.length > 20000) {
+    return jsonResponse({ error: "Eingabetext ist zu lang." }, 400);
+  }
+  if (rubric_prompt && typeof rubric_prompt === "string" && rubric_prompt.length > 20000) {
+    return jsonResponse({ error: "Bewertungsraster ist zu lang." }, 400);
+  }
 
   const messages = [
     {
@@ -238,8 +283,12 @@ async function handleOCR(request, env) {
   const body = await request.json();
   const { image_base64 } = body;
 
-  if (!image_base64) {
+  if (!image_base64 || typeof image_base64 !== "string") {
     return jsonResponse({ error: "No image provided" }, 400);
+  }
+  // Validate Base64 format and size (~10 MB limit)
+  if (image_base64.length > 10 * 1024 * 1024) {
+    return jsonResponse({ error: "Bild ist zu groß (max 10 MB)." }, 400);
   }
 
   const openaiRes = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -284,8 +333,17 @@ async function handleParseTask(request, env) {
   const body = await request.json();
   const { images } = body; // array of base64 image strings
 
-  if (!images || !images.length) {
+  if (!images || !Array.isArray(images) || !images.length) {
     return jsonResponse({ error: "No images provided" }, 400);
+  }
+  if (images.length > 10) {
+    return jsonResponse({ error: "Maximal 10 Bilder erlaubt." }, 400);
+  }
+  // Validate each image
+  for (const img of images) {
+    if (typeof img !== "string" || img.length > 10 * 1024 * 1024) {
+      return jsonResponse({ error: "Ein Bild ist ungültig oder zu groß (max 10 MB)." }, 400);
+    }
   }
 
   // Build content array with all images
@@ -346,8 +404,14 @@ Rules:
 async function handleModelAnswer(request, env) {
   const { source_text_de, task_en } = await request.json();
 
-  if (!source_text_de || !task_en) {
-    return jsonResponse({ error: "source_text_de and task_en required" }, 400);
+  if (!source_text_de || typeof source_text_de !== "string") {
+    return jsonResponse({ error: "source_text_de ist erforderlich." }, 400);
+  }
+  if (!task_en || typeof task_en !== "string") {
+    return jsonResponse({ error: "task_en ist erforderlich." }, 400);
+  }
+  if (source_text_de.length > 20000 || task_en.length > 5000) {
+    return jsonResponse({ error: "Eingabetext ist zu lang." }, 400);
   }
 
   const systemPrompt = `Du bist ein sehr guter Oberstufenschüler (Niveau B2/C1) an einem bayerischen Gymnasium. 
@@ -403,8 +467,17 @@ async function callOpenAI(env, messages, maxTokens = 4000) {
 async function handleSubmitResult(request, env) {
   const { student_name, course, type, topic, content, language, total, date } = await request.json();
 
-  if (!student_name || total == null) {
-    return jsonResponse({ error: "student_name and total required" }, 400);
+  if (!student_name || typeof student_name !== "string" || student_name.length > 200) {
+    return jsonResponse({ error: "student_name ist erforderlich (max 200 Zeichen)." }, 400);
+  }
+  if (total == null || typeof total !== "number" || total < 0 || total > 15) {
+    return jsonResponse({ error: "total muss eine Zahl zwischen 0 und 15 sein." }, 400);
+  }
+  if (course && (typeof course !== "string" || course.length > 50)) {
+    return jsonResponse({ error: "Ungültiger Kurs." }, 400);
+  }
+  if (topic && (typeof topic !== "string" || topic.length > 500)) {
+    return jsonResponse({ error: "topic ist zu lang." }, 400);
   }
 
   // Get existing results
@@ -438,8 +511,10 @@ async function handleGetResults(request, env) {
   const { teacher_password } = await request.json();
 
   // Separate teacher password check
-  const teacherPw = env.TEACHER_PASSWORD || "stanna-lehrer-2026";
-  if (teacher_password !== teacherPw) {
+  if (!env.TEACHER_PASSWORD) {
+    return jsonResponse({ error: "Server-Konfigurationsfehler." }, 500);
+  }
+  if (teacher_password !== env.TEACHER_PASSWORD) {
     return jsonResponse({ error: "Falsches Lehrer-Passwort." }, 401);
   }
 
@@ -456,7 +531,13 @@ async function handleGetResults(request, env) {
 async function handleDeleteResult(request, env) {
   const { teacher_password, result_id } = await request.json();
 
-  const teacherPw = env.TEACHER_PASSWORD || "stanna-lehrer-2026";
+  if (!result_id || typeof result_id !== "string" || result_id.length > 100) {
+    return jsonResponse({ error: "Ungültige result_id." }, 400);
+  }
+  if (!env.TEACHER_PASSWORD) {
+    return jsonResponse({ error: "Server-Konfigurationsfehler." }, 500);
+  }
+  const teacherPw = env.TEACHER_PASSWORD;
   if (teacher_password !== teacherPw) {
     return jsonResponse({ error: "Falsches Lehrer-Passwort." }, 401);
   }
@@ -542,15 +623,24 @@ function extractJSON(text) {
 function jsonResponse(data, status = 200) {
   return new Response(JSON.stringify(data), {
     status,
-    headers: corsHeaders()
+    headers: corsHeaders(currentOrigin)
   });
 }
 
-function corsHeaders() {
+const ALLOWED_ORIGINS = [
+  "https://sanktannagymnasium.workers.dev",
+  "https://sag-abi-mediation.sanktannagymnasium.workers.dev",
+  "https://www.st-anna-gymnasium.de",
+  "https://st-anna-gymnasium.de"
+];
+
+function corsHeaders(origin) {
+  const allowedOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
   return {
     "Content-Type": "application/json",
-    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Origin": allowedOrigin,
     "Access-Control-Allow-Headers": "Content-Type, X-Access-Password",
-    "Access-Control-Allow-Methods": "POST, OPTIONS"
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Vary": "Origin"
   };
 }

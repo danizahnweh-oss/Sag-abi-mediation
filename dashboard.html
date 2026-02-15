@@ -364,6 +364,10 @@ footer a { color: var(--accent); text-decoration: none; }
     <h2>Dashboard</h2>
     <p>Mediation Trainer · St. Anna</p>
 
+    <input type="password" id="accessPassword"
+           class="login-input"
+           placeholder="Zugangs-Passwort …"
+           autocomplete="off">
     <input type="password" id="teacherPassword"
            class="login-input"
            placeholder="Lehrer-Passwort …"
@@ -499,8 +503,15 @@ let allResults = [];
 
 /* ====== LOGIN ====== */
 function loginTeacher() {
+  const accessPw = document.getElementById("accessPassword").value.trim();
   teacherPw = document.getElementById("teacherPassword").value.trim();
-  if (!teacherPw) return;
+  if (!accessPw || !teacherPw) {
+    const err = document.getElementById("loginError");
+    err.textContent = "Bitte beide Passwörter eingeben.";
+    err.style.display = "block";
+    return;
+  }
+  sessionStorage.setItem("access_password", accessPw);
   loadResults();
 }
 
@@ -511,7 +522,7 @@ async function loadResults() {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "X-Access-Password": "stanna2026"
+        "X-Access-Password": sessionStorage.getItem("access_password") || ""
       },
       body: JSON.stringify({ teacher_password: teacherPw })
     });
@@ -656,7 +667,7 @@ function renderTable() {
       <td class="score-cell">${r.content ?? "–"}/15</td>
       <td class="score-cell">${r.language ?? "–"}/15</td>
       <td class="score-cell" style="font-size:1.05rem;">${r.total ?? "–"}/15</td>
-      <td><button class="delete-btn" onclick="deleteResult('${r.id}')" title="Löschen">✕</button></td>
+      <td><button class="delete-btn" onclick="deleteResult('${esc(r.id)}')" title="Löschen">✕</button></td>
     </tr>`;
   }).join("");
 }
@@ -769,7 +780,7 @@ async function deleteResult(id) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "X-Access-Password": "stanna2026"
+        "X-Access-Password": sessionStorage.getItem("access_password") || ""
       },
       body: JSON.stringify({ teacher_password: teacherPw, result_id: id })
     });

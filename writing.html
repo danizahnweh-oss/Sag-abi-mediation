@@ -8,6 +8,7 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dompurify@3.2.4/dist/purify.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -1220,7 +1221,7 @@ footer {
 <script>
 /* ================= CONFIG ================= */
 const API_BASE = "https://sag-abi-mediation-api.sanktannagymnasium.workers.dev";
-const ACCESS_PASSWORD = "stanna2026";
+const ACCESS_PASSWORD = sessionStorage.getItem("access_password") || "";
 
 const GENERATION_PROMPT_TEMPLATE = `Du bist ein Experte für das bayerische Abitur im Fach Englisch (Prüfungsteil B: Schreiben). Erstelle eine vollständige Schreiben-Prüfungsaufgabe.
 
@@ -1720,7 +1721,7 @@ async function submitForCorrection() {
 
     // Display feedback
     const feedbackMd = (data.feedback || "") + (data.corrections ? "\n\n## Korrekturen\n" + data.corrections : "");
-    document.getElementById("feedbackBody").innerHTML = marked.parse(feedbackMd);
+    document.getElementById("feedbackBody").innerHTML = safeMarkdown(feedbackMd);
 
     document.getElementById("feedbackContent").style.display = "block";
   } catch (e) {
@@ -1962,6 +1963,10 @@ function escapeHtml(str) {
   }[m]));
 }
 
+function safeMarkdown(str) {
+  return DOMPurify.sanitize(marked.parse(str));
+}
+
 /* ================= MUSTERLÖSUNG ================= */
 async function generateModelAnswer() {
   const btn = document.getElementById("modelAnswerBtn");
@@ -1988,7 +1993,7 @@ async function generateModelAnswer() {
       task_en: CONFIG.storedData.task_instruction
     });
 
-    body.innerHTML = marked.parse(data.model_answer || "Keine Musterlösung generiert.");
+    body.innerHTML = safeMarkdown(data.model_answer || "Keine Musterlösung generiert.");
     card.style.display = "block";
     card.scrollIntoView({ behavior: "smooth" });
   } catch (e) {
